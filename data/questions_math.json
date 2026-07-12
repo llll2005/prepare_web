@@ -1,0 +1,72 @@
+{
+  "subjectId": "math",
+  "schemaNote": "數學考古題，以大題/題組為單位。type ∈ 選擇/複選/計算(填充)/證明。原卷圖由 images_math.json 依 year 對應。",
+  "questions": [
+    {"id":"math-102-q1","year":102,"qnum":1,"points":12,"type":"計算","units":["la-eigen"],"keywords":["eigenvalue","characteristic polynomial","diagonalization"],"title":"特徵值與對角化","stem":"求矩陣特徵值/特徵向量並判斷可否對角化（102 共 3 題特徵值相關）。","source":"台大資工102 數學 線代-特徵值","src":"exam","answer":""},
+    {"id":"math-102-q2","year":102,"qnum":2,"points":10,"type":"計算","units":["la-determinant"],"keywords":["determinant","cofactor expansion","properties of determinants"],"title":"行列式計算","stem":"行列式性質與計算。","source":"台大資工102 數學 線代-行列式","src":"exam","answer":""},
+    {"id":"math-102-q3","year":102,"qnum":3,"points":10,"type":"證明","units":["dm-relations"],"keywords":["relation","equivalence relation","transitive closure"],"title":"關係性質","stem":"判斷/證明關係之 reflexive/symmetric/transitive。","source":"台大資工102 數學 離散-關係","src":"exam","answer":""},
+    {"id":"math-102-q4","year":102,"qnum":4,"points":12,"type":"計算","units":["dm-advcounting"],"keywords":["recurrence relation","characteristic equation","solving recurrences"],"title":"遞迴關係求解","stem":"解線性遞迴關係（102 共 2 題遞迴）。","source":"台大資工102 數學 離散-遞迴","src":"exam","answer":""},
+    {"id":"math-102-q5","year":102,"qnum":5,"points":10,"type":"證明","units":["dm-graphs"],"keywords":["graph","connectivity","bipartite"],"title":"圖論證明","stem":"圖的性質證明。","source":"台大資工102 數學 離散-圖論","src":"exam","answer":""},
+    {"id":"math-102-q6","year":102,"qnum":6,"points":10,"type":"證明","units":["abstract-algebra"],"keywords":["subgroup","Lagrange theorem","coset","group"],"title":"群論／Lagrange（課外）","stem":"子群與 Lagrange 定理相關證明（Friedberg/Rosen 未涵蓋之課外點）。","source":"台大資工102 數學 課外-群論","src":"exam","answer":""},
+
+    {"id":"math-103-q1","year":103,"qnum":1,"points":12,"type":"證明","units":["la-vectorspace"],"keywords":["span","linear independence","subspace","basis"],"title":"span／線性獨立證明","stem":"證明關於 span 與線性獨立之命題。","source":"台大資工103 數學 線代-向量空間","src":"exam","answer":""},
+    {"id":"math-103-q2","year":103,"qnum":2,"points":12,"type":"計算","units":["la-eigen"],"keywords":["eigenvalue","eigenvector"],"title":"特徵值計算","stem":"求特徵值與特徵向量。","source":"台大資工103 數學 線代-特徵值","src":"exam","answer":""},
+    {"id":"math-103-q3","year":103,"qnum":3,"points":15,"type":"計算","units":["dm-counting"],"keywords":["counting","permutation","combination","binomial theorem"],"title":"計數綜合（3 題）","stem":"排列組合／二項式等計數題（103 共 3 題計數）。","source":"台大資工103 數學 離散-計數","src":"exam","answer":""},
+    {"id":"math-103-q4","year":103,"qnum":4,"points":12,"type":"計算","units":["dm-advcounting"],"keywords":["generating function","solving recurrences"],"title":"生成函數","stem":"以生成函數解計數／遞迴問題。","source":"台大資工103 數學 離散-生成函數","src":"exam","answer":""},
+    {"id":"math-103-q5","year":103,"qnum":5,"points":8,"type":"計算","units":["dm-trees"],"keywords":["tree traversal","binary tree","rooted tree"],"title":"樹走訪 postorder","stem":"樹的 postorder 走訪。","source":"台大資工103 數學 離散-樹","src":"exam","answer":""},
+
+    {"id":"math-104-q1","year":104,"qnum":1,"points":15,"type":"計算","units":["la-inner"],"keywords":["inner product","Gram-Schmidt","orthonormal basis","orthogonality"],"title":"內積與 Gram-Schmidt（3 題）","stem":"內積空間、正交化（104 共 3 題內積，含複數內積反例）。","source":"台大資工104 數學 線代-內積","src":"exam","answer":""},
+    {"id":"math-104-q2","year":104,"qnum":2,"points":10,"type":"計算","units":["dm-counting"],"keywords":["counting","combination"],"title":"計數","stem":"計數題。","source":"台大資工104 數學 離散-計數","src":"exam","answer":""},
+    {"id":"math-104-q3","year":104,"qnum":3,"points":10,"type":"計算","units":["dm-numbertheory"],"keywords":["modular arithmetic","prime"],"title":"Euler φ 函數","stem":"Euler totient 函數計算。","source":"台大資工104 數學 離散-數論","src":"exam","answer":""},
+    {"id":"math-104-q4","year":104,"qnum":4,"points":12,"type":"計算","units":["dm-graphs"],"keywords":["graph","bipartite"],"title":"最大流／二分圖","stem":"圖上 max-flow 或二分匹配。","source":"台大資工104 數學 離散-圖論","src":"exam","answer":""},
+
+    {"id":"math-105-q1","year":105,"qnum":1,"points":10,"type":"複選","units":["la-eigen","la-determinant"],"keywords":["characteristic polynomial","determinant","eigenvalue"],"title":"trace／det 性質","stem":"trace、det 與特徵值關係之複選。","source":"台大資工105 數學 線代-特徵值","src":"exam","answer":""},
+    {"id":"math-105-q2","year":105,"qnum":2,"points":10,"type":"計算","units":["la-inner"],"keywords":["self-adjoint","spectral theorem","inner product"],"title":"正定矩陣","stem":"正定／半正定判定。","source":"台大資工105 數學 線代-內積","src":"exam","answer":""},
+    {"id":"math-105-q3","year":105,"qnum":3,"points":15,"type":"計算","units":["dm-counting"],"keywords":["counting","combinations with repetition","binomial theorem"],"title":"計數＋分割（3 題）","stem":"計數、整數分割（105 共 3 題計數）。","source":"台大資工105 數學 離散-計數","src":"exam","answer":""},
+    {"id":"math-105-q4","year":105,"qnum":4,"points":12,"type":"計算","units":["dm-advcounting"],"keywords":["generating function","recurrence relation"],"title":"生成函數","stem":"生成函數解題。","source":"台大資工105 數學 離散-生成函數","src":"exam","answer":""},
+    {"id":"math-105-q5","year":105,"qnum":5,"points":8,"type":"複選","units":["dm-boolean"],"keywords":["Boolean algebra","functional completeness"],"title":"self-dual 布林函數","stem":"self-dual 布林函數判定。","source":"台大資工105 數學 離散-布林","src":"exam","answer":""},
+
+    {"id":"math-106-q1","year":106,"qnum":1,"points":15,"type":"計算","units":["la-inner"],"keywords":["pseudoinverse","orthogonal projection","least squares"],"title":"pseudo-inverse 與投影","stem":"求 Moore-Penrose pseudo-inverse／正交投影。","source":"台大資工106 數學 線代-內積/SVD","src":"exam","answer":""},
+    {"id":"math-106-q2","year":106,"qnum":2,"points":12,"type":"計算","units":["dm-relations"],"keywords":["relation","transitive closure","equivalence relation"],"title":"關係與遞移閉包（2 題）","stem":"關係性質與遞移閉包（106 共 2 題關係）。","source":"台大資工106 數學 離散-關係","src":"exam","answer":""},
+    {"id":"math-106-q3","year":106,"qnum":3,"points":12,"type":"計算","units":["dm-advcounting"],"keywords":["recurrence relation","linear recurrence","Fibonacci"],"title":"Fibonacci 遞迴","stem":"Fibonacci 型遞迴求解。","source":"台大資工106 數學 離散-遞迴","src":"exam","answer":""},
+
+    {"id":"math-107-q1","year":107,"qnum":1,"points":12,"type":"複選","units":["la-eigen","la-canonical"],"keywords":["characteristic polynomial","minimal polynomial","Cayley-Hamilton"],"title":"矩陣多項式／char poly","stem":"矩陣多項式與特徵多項式之複選。","source":"台大資工107 數學 線代-特徵值","src":"exam","answer":""},
+    {"id":"math-107-q2","year":107,"qnum":2,"points":10,"type":"計算","units":["la-inner"],"keywords":["inner product","orthogonality"],"title":"P₂ 上的內積","stem":"多項式空間 P₂ 上的內積。","source":"台大資工107 數學 線代-內積","src":"exam","answer":""},
+    {"id":"math-107-q3","year":107,"qnum":3,"points":12,"type":"計算","units":["dm-advcounting"],"keywords":["recurrence relation","generating function"],"title":"遞迴與生成函數","stem":"遞迴／生成函數。","source":"台大資工107 數學 離散-進階計數","src":"exam","answer":""},
+    {"id":"math-107-q4","year":107,"qnum":4,"points":10,"type":"計算","units":["dm-graphs","dm-counting"],"keywords":["graph","counting"],"title":"圖的計數","stem":"圖之計數問題。","source":"台大資工107 數學 離散-圖論","src":"exam","answer":""},
+
+    {"id":"math-108-q1","year":108,"qnum":1,"points":12,"type":"計算","units":["la-lineartransform"],"keywords":["rank-nullity","kernel","range","matrix representation"],"title":"rank-nullity","stem":"線性變換的 rank-nullity 與矩陣表示。","source":"台大資工108 數學 線代-線性變換","src":"exam","answer":""},
+    {"id":"math-108-q2","year":108,"qnum":2,"points":10,"type":"計算","units":["la-canonical"],"keywords":["Jordan canonical form","minimal polynomial"],"title":"Jordan 形（邊緣）","stem":"Jordan 標準形相關。","source":"台大資工108 數學 線代-標準形","src":"exam","answer":""},
+    {"id":"math-108-q3","year":108,"qnum":3,"points":8,"type":"複選","units":["la-vectorspace"],"keywords":["vector space","subspace","dimension"],"title":"向量空間敘述","stem":"向量空間性質敘述判斷。","source":"台大資工108 數學 線代-向量空間","src":"exam","answer":""},
+    {"id":"math-108-q4","year":108,"qnum":4,"points":15,"type":"計算","units":["dm-counting"],"keywords":["counting","permutation","pigeonhole principle"],"title":"計數綜合（3 題）","stem":"計數（108 共 3 題計數）。","source":"台大資工108 數學 離散-計數","src":"exam","answer":""},
+    {"id":"math-108-q5","year":108,"qnum":5,"points":8,"type":"複選","units":["dm-logic"],"keywords":["propositional logic","logical equivalence","tautology"],"title":"tautology","stem":"命題等價／tautology 判斷。","source":"台大資工108 數學 離散-邏輯","src":"exam","answer":""},
+
+    {"id":"math-109-q1","year":109,"qnum":1,"points":15,"type":"計算","units":["la-inner"],"keywords":["pseudoinverse","singular value decomposition","least squares"],"title":"pseudo-inverse／Moore-Penrose","stem":"求 pseudo-inverse 並驗證 Moore-Penrose 條件。","source":"台大資工109 數學 線代-SVD/pseudo-inverse","src":"exam","answer":""},
+    {"id":"math-109-q2","year":109,"qnum":2,"points":10,"type":"計算","units":["la-canonical"],"keywords":["Jordan canonical form","generalized eigenvector"],"title":"Jordan form","stem":"求 Jordan 標準形。","source":"台大資工109 數學 線代-標準形","src":"exam","answer":""},
+    {"id":"math-109-q3","year":109,"qnum":3,"points":18,"type":"計算","units":["dm-counting"],"keywords":["counting","combination","combinations with repetition"],"title":"計數綜合（4 題）","stem":"計數（109 共 4 題計數，含非負整數解）。","source":"台大資工109 數學 離散-計數","src":"exam","answer":""},
+    {"id":"math-109-q4","year":109,"qnum":4,"points":12,"type":"計算","units":["dm-advcounting"],"keywords":["generating function","recurrence relation"],"title":"生成函數（2 題）","stem":"生成函數（109 共 2 題）。","source":"台大資工109 數學 離散-生成函數","src":"exam","answer":""},
+
+    {"id":"math-110-q1","year":110,"qnum":1,"points":12,"type":"複選","units":["la-canonical","la-lineartransform"],"keywords":["minimal polynomial","linear transformation"],"title":"minimal poly／微分算子","stem":"最小多項式與微分算子（偏理論敘述）。","source":"台大資工110 數學 線代-標準形","src":"exam","answer":""},
+    {"id":"math-110-q2","year":110,"qnum":2,"points":12,"type":"證明","units":["dm-graphs"],"keywords":["graph","Euler circuit","connectivity"],"title":"圖論","stem":"圖之性質。","source":"台大資工110 數學 離散-圖論","src":"exam","answer":""},
+    {"id":"math-110-q3","year":110,"qnum":3,"points":10,"type":"證明","units":["abstract-algebra"],"keywords":["Lagrange theorem","subgroup","group","coset"],"title":"群論 Lagrange（課外）","stem":"Lagrange 定理／子群（課外）。","source":"台大資工110 數學 課外-群論","src":"exam","answer":""},
+
+    {"id":"math-111-q1","year":111,"qnum":1,"points":20,"type":"選擇","units":["la-eigen"],"keywords":["eigenvalue","diagonalization","characteristic polynomial"],"title":"特徵值單選（4 題）","stem":"特徵值/對角化單選（111 題型改 A–E 單選，共 4 題特徵值）。","source":"台大資工111 數學 線代-特徵值","src":"exam","answer":""},
+    {"id":"math-111-q2","year":111,"qnum":2,"points":10,"type":"選擇","units":["dm-advcounting"],"keywords":["recurrence relation","solving recurrences"],"title":"遞迴單選（2 題）","stem":"遞迴關係單選。","source":"台大資工111 數學 離散-遞迴","src":"exam","answer":""},
+    {"id":"math-111-q3","year":111,"qnum":3,"points":8,"type":"選擇","units":["dm-relations"],"keywords":["relation","partial order"],"title":"非對稱關係","stem":"非對稱關係性質。","source":"台大資工111 數學 離散-關係","src":"exam","answer":""},
+
+    {"id":"math-112-q1","year":112,"qnum":1,"points":12,"type":"計算","units":["la-eigen"],"keywords":["eigenvalue","diagonalization"],"title":"Markov 極限 lim Aⁿx","stem":"Markov 矩陣冪極限（對角化應用）。","source":"台大資工112 數學 線代-特徵值","src":"exam","answer":""},
+    {"id":"math-112-q2","year":112,"qnum":2,"points":10,"type":"複選","units":["la-inner"],"keywords":["self-adjoint","spectral theorem","normal operator"],"title":"自伴算子","stem":"自伴／正規算子性質。","source":"台大資工112 數學 線代-內積","src":"exam","answer":""},
+    {"id":"math-112-q3","year":112,"qnum":3,"points":12,"type":"計算","units":["dm-advcounting"],"keywords":["recurrence relation"],"title":"遞迴（2 題）","stem":"遞迴求解（112 共 2 題）。","source":"台大資工112 數學 離散-遞迴","src":"exam","answer":""},
+    {"id":"math-112-q4","year":112,"qnum":4,"points":10,"type":"計算","units":["dm-counting"],"keywords":["counting","combination"],"title":"計數（2 題）","stem":"計數（112 共 2 題）。","source":"台大資工112 數學 離散-計數","src":"exam","answer":""},
+
+    {"id":"math-113-q1","year":113,"qnum":1,"points":18,"type":"計算","units":["la-inner"],"keywords":["least squares","singular value decomposition","pseudoinverse"],"title":"最小平方／奇異值／pseudo-inverse","stem":"最小平方解、SVD、pseudo-inverse（113 線代主軸）。","source":"台大資工113 數學 線代-SVD","src":"exam","answer":""},
+    {"id":"math-113-q2","year":113,"qnum":2,"points":10,"type":"計算","units":["la-systems","abstract-algebra"],"keywords":["system of linear equations","rank","finite field","field"],"title":"有限體 F₃ 上線代","stem":"F₃ 上的線性方程組／矩陣（需模運算）。","source":"台大資工113 數學 線代-有限體","src":"exam","answer":""},
+    {"id":"math-113-q3","year":113,"qnum":3,"points":8,"type":"複選","units":["dm-boolean"],"keywords":["Boolean algebra"],"title":"布林","stem":"布林代數題。","source":"台大資工113 數學 離散-布林","src":"exam","answer":""},
+    {"id":"math-113-q4","year":113,"qnum":4,"points":10,"type":"計算","units":["dm-numbertheory","dm-graphs"],"keywords":["modular arithmetic","graph"],"title":"Euler φ／圖","stem":"Euler φ 與圖論題。","source":"台大資工113 數學 離散-數論/圖","src":"exam","answer":""},
+
+    {"id":"math-114-q1","year":114,"qnum":1,"points":15,"type":"計算","units":["la-inner","la-eigen"],"keywords":["inner product","eigenvalue","singular value decomposition"],"title":"內積／特徵值（表格作答）","stem":"內積與特徵值乘積、f(A) 最大特徵值（114 表格作答）。","source":"台大資工114 數學 線代","src":"exam","answer":""},
+    {"id":"math-114-q2","year":114,"qnum":2,"points":10,"type":"計算","units":["dm-graphs"],"keywords":["Euler circuit","graph"],"title":"Euler 圖","stem":"Euler 圖判定／構造。","source":"台大資工114 數學 離散-圖論","src":"exam","answer":""},
+    {"id":"math-114-q3","year":114,"qnum":3,"points":10,"type":"計算","units":["dm-relations"],"keywords":["relation","equivalence relation"],"title":"關係","stem":"關係性質。","source":"台大資工114 數學 離散-關係","src":"exam","answer":""},
+    {"id":"math-114-q4","year":114,"qnum":4,"points":12,"type":"計算","units":["dm-advcounting"],"keywords":["recurrence relation","solving recurrences"],"title":"遞迴","stem":"遞迴求解。","source":"台大資工114 數學 離散-遞迴","src":"exam","answer":""}
+  ]
+}

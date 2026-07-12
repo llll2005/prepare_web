@@ -1,0 +1,38 @@
+{
+  "subject": "計算機結構與作業系統",
+  "subjectId": "caos",
+  "examConfig": {
+    "durationMinutes": 100,
+    "durationNote": "台大資工所實際時長待確認，先以 100 分鐘為預設",
+    "overshootRatio": 1.3,
+    "historicalBaseline": {
+      "singleYearQuestions": 12,
+      "singleYearNote": "歷屆單年整卷平均題量（架構50%+OS50%，估約 12 題）。本卷固定 = 此值 × 1.3 ≈ 16 題。",
+      "avgQuestionsPerExam": 12,
+      "typeDistribution": {"選擇": 0.22, "複選": 0.12, "計算": 0.30, "設計": 0.26, "證明": 0.10}
+    }
+  },
+  "units": [
+    {"id":"ca-perf","name":"架構：效能／CPI／Amdahl","textbook":"COD 1 / Quant 1","keywords":["performance","CPI","Amdahl's law","SPEC","execution time","clock rate","benchmark"]},
+    {"id":"ca-isa","name":"架構：ISA／組語／浮點","textbook":"COD 2,3","keywords":["instruction set","MIPS","RISC-V","assembly","addressing mode","IEEE 754","floating point","data representation"]},
+    {"id":"ca-pipeline","name":"架構：管線與危障","textbook":"COD 4","keywords":["pipeline","datapath","hazard","forwarding","stall","branch delay","pipeline cycles"]},
+    {"id":"ca-memory","name":"架構：快取與記憶體階層","textbook":"COD 5 / Quant 2","keywords":["cache","memory hierarchy","TLB","virtual memory","VIPT","3C misses","cache block size","write policy"]},
+    {"id":"ca-ilp","name":"架構：ILP／分支預測／亂序","textbook":"Quant 3","keywords":["ILP","branch prediction","out-of-order","speculation","Tomasulo","superscalar","Meltdown"]},
+    {"id":"ca-dlp","name":"架構：資料平行／GPU／roofline","textbook":"Quant 4","keywords":["SIMD","SIMT","GPU","vector","roofline model","arithmetic intensity","data-level parallelism"]},
+    {"id":"ca-coherence","name":"架構：快取／記憶體一致性","textbook":"Quant 5","keywords":["cache coherence","snooping","MESI","false sharing","memory consistency","TSO","sequential consistency"]},
+    {"id":"ca-multicore","name":"架構：多核／TLP","textbook":"COD 6 / Quant 5","keywords":["multicore","thread-level parallelism","SMP","big.LITTLE","speedup","scalability"]},
+    {"id":"ca-dsa","name":"架構：領域專用加速器（AI）","textbook":"Quant 6/7（新版）","keywords":["domain-specific architecture","TPU","DNN accelerator","LLM accelerator","FP8","mixed precision","MLPerf","systolic array"]},
+
+    {"id":"os-process","name":"OS：行程／fork","textbook":"Silberschatz 3","keywords":["process","fork","vfork","copy-on-write","signal","IPC","process state"]},
+    {"id":"os-thread","name":"OS：執行緒","textbook":"Silberschatz 4","keywords":["thread","thread pool","multithreading model","user thread","kernel thread"]},
+    {"id":"os-scheduling","name":"OS：CPU 排程","textbook":"Silberschatz 5","keywords":["CPU scheduling","round-robin","SJF","FCFS","priority scheduling","rate-monotonic","real-time scheduling","turnaround time"]},
+    {"id":"os-sync","name":"OS：同步","textbook":"Silberschatz 6,7","keywords":["synchronization","semaphore","mutex","critical section","barrier","monitor","race condition","producer-consumer"]},
+    {"id":"os-deadlock","name":"OS：死結","textbook":"Silberschatz 8","keywords":["deadlock","banker's algorithm","safe state","resource allocation graph","deadlock avoidance"]},
+    {"id":"os-memory","name":"OS：記憶體管理／分頁","textbook":"Silberschatz 9","keywords":["paging","segmentation","page table","memory allocation","inverted page table","address translation"]},
+    {"id":"os-vm","name":"OS：虛擬記憶體","textbook":"Silberschatz 10","keywords":["virtual memory","demand paging","page replacement","thrashing","working set","page fault frequency","LRU"]},
+    {"id":"os-storage","name":"OS：I/O／磁碟／檔案系統","textbook":"Silberschatz 11-15","keywords":["disk scheduling","I/O","file system","buffered I/O","RAID","file allocation","directory","consistency semantics"]},
+    {"id":"os-security","name":"OS：安全","textbook":"Silberschatz 16,17","keywords":["security","buffer overflow","TEE","SGX","access control","MAC","DoS","protection"]},
+    {"id":"os-virtualization","name":"OS：虛擬化","textbook":"Silberschatz 18","keywords":["virtualization","hypervisor","container","nested page table","virtual machine"]},
+    {"id":"os-distributed","name":"OS：分散式／共識","textbook":"Silberschatz 19","keywords":["distributed system","consensus","clock synchronization","replication","MapReduce"]}
+  ]
+}

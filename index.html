@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台大資工所 模擬考系統 — 資料結構與演算法</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1>台大資工所 模擬考系統</h1>
+  <div class="subject-tag" id="subjectTag">資料結構與演算法</div>
+  <nav>
+    <button data-screen="start" class="navbtn active">出題</button>
+    <button data-screen="pool" class="navbtn">題海狀態</button>
+    <button data-screen="history" class="navbtn">歷次成績</button>
+    <span class="spacer"></span>
+    <button id="exportBtn" class="ghost" title="把作答記錄/錯題標記匯出成檔案備份">匯出進度</button>
+    <label class="ghost importlbl">匯入進度<input type="file" id="importFile" accept="application/json" hidden></label>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ 出題 / 開始頁 ============ -->
+  <section id="screen-start" class="screen active">
+    <h2>① 選擇考試範圍</h2>
+    <p class="hint">勾選要考的單元（對應各科聖經章節）。系統會依「涵蓋所選範圍所有關鍵字、題數與題型分佈比歷屆多約 1/3」的規範隨機選題，並依你的錯題標記調整出現機率。</p>
+    <div class="unit-toolbar">
+      <button id="selAll" class="ghost">全選</button>
+      <button id="selNone" class="ghost">全不選</button>
+      <span id="scopeSummary" class="scope-summary"></span>
+    </div>
+    <div id="unitList" class="unit-grid"></div>
+    <div class="opt-row">
+      <span class="optlabel">題目來源：</span>
+      <label><input type="checkbox" id="srcExam" checked> <span id="srcExamLabel">考古題</span></label>
+      <label><input type="checkbox" id="srcTb" checked> <span id="srcTbLabel">課本習題</span></label>
+      <label title="只出沒寫過的＋答錯的；仍在錯題復習中的題不受影響"><input type="checkbox" id="excludeCorrect"> 排除已答對的題</label>
+      <span class="optlabel" style="margin-left:1rem">本卷題數：</span>
+      <input type="number" id="countOverride" min="1" max="120" placeholder="依規範">
+      <span class="muted">（留空＝依「涵蓋全部關鍵字／歷屆×1.33」自動決定；想多刷課本可調大）</span>
+    </div>
+    <div class="start-bar">
+      <div id="genPreview" class="gen-preview"></div>
+      <button id="startBtn" class="primary big">開始考試 ▶</button>
+    </div>
+  </section>
+
+  <!-- ============ 考試頁 ============ -->
+  <section id="screen-exam" class="screen">
+    <div class="exam-top">
+      <div>
+        <strong id="examScope"></strong>
+        <span id="examMeta" class="muted"></span>
+      </div>
+      <div id="timer" class="timer">--:--</div>
+    </div>
+    <div id="examQuestions"></div>
+    <div class="exam-bottom">
+      <button id="submitBtn" class="primary big">送出作答 ▶</button>
+      <button id="abortBtn" class="ghost">放棄此卷</button>
+    </div>
+  </section>
+
+  <!-- ============ 送出 / 打包頁 ============ -->
+  <section id="screen-submit" class="screen">
+    <h2>② 作答已打包（Markdown）</h2>
+    <p class="hint">把下面整段複製給 AI（或下載 .md）請它批改。批改完成後，到下一步把每題結果（✓／○／✗）填進去，系統會產生成績報告並更新你的錯題題海。</p>
+    <div class="btnrow">
+      <button id="copyMd" class="primary">複製 Markdown</button>
+      <button id="downloadMd" class="ghost">下載 .md</button>
+      <button id="toGrade" class="primary">前往批改 ▶</button>
+    </div>
+    <textarea id="mdOut" class="mdbox" readonly></textarea>
+  </section>
+
+  <!-- ============ 批改頁 ============ -->
+  <section id="screen-grade" class="screen">
+    <h2>③ 輸入批改結果</h2>
+    <p class="hint">依 AI 給的批改，逐題點選 <b>✓ 對</b> / <b>○ 無（未答/不計）</b> / <b>✗ 錯</b>。完成後按「產生報告 &amp; 更新題海」。</p>
+    <div id="gradeList" class="grade-list"></div>
+    <div class="btnrow">
+      <button id="finishGrade" class="primary big">產生報告 &amp; 更新題海 ▶</button>
+    </div>
+    <div id="reportOut"></div>
+  </section>
+
+  <!-- ============ 題海狀態 ============ -->
+  <section id="screen-pool" class="screen">
+    <h2>題海狀態</h2>
+    <p class="hint">錯題標記需「連續兩次出現於考試且答對」才會消除。標記中的題出現機率較高，已熟練的較低。</p>
+    <div id="poolStats" class="pool-stats"></div>
+    <div id="poolList" class="pool-list"></div>
+  </section>
+
+  <!-- ============ 歷次成績 ============ -->
+  <section id="screen-history" class="screen">
+    <h2>歷次成績</h2>
+    <div id="historyList"></div>
+  </section>
+</main>
+
+<!-- 資料結構與演算法 -->
+<script src="data/units_ds.js"></script>
+<script src="data/questions_ds.js"></script>
+<script src="data/questions_ds_clrs.js"></script>
+<script src="data/questions_ds_pai.js"></script>
+<script src="data/images_ds.js"></script>
+<!-- 數學 -->
+<script src="data/units_math.js"></script>
+<script src="data/questions_math.js"></script>
+<script src="data/questions_math_fried.js"></script>
+<script src="data/questions_math_rosen.js"></script>
+<script src="data/questions_math_schaum.js"></script>
+<script src="data/questions_math_levin.js"></script>
+<script src="data/images_math.js"></script>
+<!-- 計算機結構與作業系統 -->
+<script src="data/units_caos.js"></script>
+<script src="data/questions_caos.js"></script>
+<script src="data/questions_caos_silb.js"></script>
+<script src="data/questions_caos_hp.js"></script>
+<script src="data/questions_caos_cod.js"></script>
+<script src="data/images_caos.js"></script>
+<!-- 科目登錄（須在所有 data 之後） -->
+<script src="data/subjects.js"></script>
+<script src="js/srs.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

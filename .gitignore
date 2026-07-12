@@ -1,0 +1,9 @@
+# 大型渲染圖檔（版權課本頁面圖 / 歷屆考卷掃描）— 不上傳。
+# 需以原始 PDF 用 pdftoppm 重新渲染（見 README「圖檔怎麼來」）。
+images/
+
+# 匯出／暫存
+reports/
+*.log
+.DS_Store
+.vscode/
