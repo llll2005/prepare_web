@@ -11,8 +11,8 @@
 
 加新科目：在 `data/` 放 `units_<id>.js`／`questions_<id>*.js`／`images_<id>.js`，於 `data/subjects.js` 註冊，並在 `index.html` 載入即可。
 
-## ⚠ 關於 images/（未納入版本控制）
-`images/`（考卷原卷圖、課本頁面圖，約 285MB）是版權內容，**未上傳到 git**（見 `.gitignore`）。clone 下來後考試頁的「展開原卷／課本原頁」會暫時無圖，但 App 其餘功能正常。要恢復圖片，需用各科原始 PDF 以 `pdftoppm -r 130 -png` 重新渲染到 `images/<subject>/` 與 `images/<subject>_book/`（檔名格式：考卷 `<年>_p-<頁>.png`；課本 `<book>_p<PDF頁>.png`，book 與頁碼見 `data/questions_*.json` 每題的 `book`/`page`）。
+## 圖檔 images/
+`images/`（考卷原卷圖 + 課本頁面圖，約 285MB）**已納入 repo**，clone 下來即完整可用（考試頁可展開原卷／課本原頁）。內容為各科原始 PDF 以 `pdftoppm -r 130 -png` 渲染：考卷 `images/<subject>/<年>_p-<頁>.png`、課本 `images/<subject>_book/<book>_p<PDF頁>.png`（book 與頁碼對應每題的 `book`/`page` 欄位）。
 
 ## 怎麼開
 - **最簡單**：直接用瀏覽器開 `index.html`（雙擊即可）。資料以 `<script>` 全域變數載入、圖片走相對路徑，無需伺服器。
