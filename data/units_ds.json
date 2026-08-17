@@ -11,11 +11,11 @@
       "singleYearNote": "歷屆單一年度整卷平均題量（102-114 估計約 12 題；設計題年約 6-7 大題、選擇題年約 16-22 題）。本卷題數固定 = 此值 × overshootRatio ≈ 16 題。可在此調整。",
       "avgQuestionsPerExam": 12,
       "typeDistribution": {
-        "選擇": 0.30,
+        "選擇": 0.3,
         "複選": 0.22,
         "填空": 0.12,
         "計算": 0.08,
-        "證明": 0.10,
+        "證明": 0.1,
         "設計": 0.18
       },
       "note": "依 102-114 共13年題型混合估計的整卷平均；選定部分單元時，依該些單元歷史佔比等比縮放後再乘 overshootRatio"
@@ -26,157 +26,353 @@
       "id": "asymptotic",
       "name": "漸進分析與遞迴式",
       "textbook": "CLRS 3,4",
-      "keywords": ["asymptotic", "Big-O", "Theta", "recurrence", "Master theorem", "Akra-Bazzi", "growth rate"]
+      "keywords": [
+        "asymptotic",
+        "Big-O",
+        "Theta",
+        "recurrence",
+        "Master theorem",
+        "Akra-Bazzi",
+        "growth rate"
+      ]
     },
     {
       "id": "sorting",
       "name": "排序",
       "textbook": "CLRS 6-8 / Horowitz 7",
-      "keywords": ["quicksort", "mergesort", "heapsort", "counting sort", "radix sort", "bucket sort", "lower bound", "3-way quicksort", "stability", "selection problem", "quickselect"]
+      "keywords": [
+        "quicksort",
+        "mergesort",
+        "heapsort",
+        "counting sort",
+        "radix sort",
+        "bucket sort",
+        "lower bound",
+        "3-way quicksort",
+        "stability",
+        "selection problem",
+        "quickselect"
+      ]
     },
     {
       "id": "heap",
       "name": "堆積／優先佇列",
       "textbook": "Horowitz 5,9 / CLRS 6",
-      "keywords": ["binary heap", "build-heap", "min-heap", "max-heap", "decrease-key", "binomial heap", "leftist heap", "Fibonacci heap", "d-ary heap"]
+      "keywords": [
+        "binary heap",
+        "build-heap",
+        "min-heap",
+        "max-heap",
+        "decrease-key",
+        "binomial heap",
+        "leftist heap",
+        "Fibonacci heap",
+        "d-ary heap"
+      ]
     },
     {
       "id": "lineardata",
       "name": "堆疊／佇列／串列／Deque",
       "textbook": "Horowitz 3,4",
-      "keywords": ["stack", "queue", "deque", "linked list", "circular list", "stack permutation", "Catalan number"]
+      "keywords": [
+        "stack",
+        "queue",
+        "deque",
+        "linked list",
+        "circular list",
+        "stack permutation",
+        "Catalan number"
+      ]
     },
     {
       "id": "tree",
       "name": "樹（BST/AVL/RB/B+）",
       "textbook": "Horowitz 5,10,11 / CLRS 12,13,18",
-      "keywords": ["binary search tree", "AVL tree", "red-black tree", "B-tree", "B+ tree", "tree traversal", "threaded tree", "tree diameter", "tree center", "reroot", "tree join", "rotation"]
+      "keywords": [
+        "binary search tree",
+        "AVL tree",
+        "red-black tree",
+        "B-tree",
+        "B+ tree",
+        "tree traversal",
+        "threaded tree",
+        "tree diameter",
+        "tree center",
+        "reroot",
+        "tree join",
+        "rotation"
+      ]
     },
     {
       "id": "hashing",
       "name": "雜湊",
       "textbook": "Horowitz 8 / CLRS 11",
-      "keywords": ["hashing", "open addressing", "chaining", "double hashing", "linear probing", "universal hashing", "load factor", "collision"]
+      "keywords": [
+        "hashing",
+        "open addressing",
+        "chaining",
+        "double hashing",
+        "linear probing",
+        "universal hashing",
+        "load factor",
+        "collision"
+      ]
     },
     {
       "id": "dp",
       "name": "動態規劃",
       "textbook": "CLRS 15",
-      "keywords": ["dynamic programming", "LCS", "edit distance", "matrix chain", "knapsack DP", "interval DP", "tree DP", "longest palindromic subsequence", "optimal substructure", "sequence alignment"]
+      "keywords": [
+        "dynamic programming",
+        "LCS",
+        "edit distance",
+        "matrix chain",
+        "knapsack DP",
+        "interval DP",
+        "tree DP",
+        "longest palindromic subsequence",
+        "optimal substructure",
+        "sequence alignment"
+      ]
     },
     {
       "id": "greedy",
       "name": "貪婪法",
       "textbook": "CLRS 16",
-      "keywords": ["greedy", "Huffman coding", "activity selection", "fractional knapsack", "exchange argument", "matroid"]
+      "keywords": [
+        "greedy",
+        "Huffman coding",
+        "activity selection",
+        "fractional knapsack",
+        "exchange argument",
+        "matroid"
+      ]
     },
     {
       "id": "graphbasic",
       "name": "圖論基礎與走訪",
       "textbook": "CLRS 20-22 / Horowitz 6",
-      "keywords": ["BFS", "DFS", "topological sort", "strongly connected components", "connectivity", "graph representation"]
+      "keywords": [
+        "BFS",
+        "DFS",
+        "topological sort",
+        "strongly connected components",
+        "connectivity",
+        "graph representation"
+      ]
     },
     {
       "id": "shortestpath",
       "name": "最短路徑",
       "textbook": "CLRS 24-25",
-      "keywords": ["Dijkstra", "Bellman-Ford", "Floyd-Warshall", "DAG shortest path", "negative cycle", "bottleneck shortest path"]
+      "keywords": [
+        "Dijkstra",
+        "Bellman-Ford",
+        "Floyd-Warshall",
+        "DAG shortest path",
+        "negative cycle",
+        "bottleneck shortest path"
+      ]
     },
     {
       "id": "mst",
       "name": "最小生成樹",
       "textbook": "CLRS 23",
-      "keywords": ["minimum spanning tree", "Kruskal", "Prim", "cut property", "cycle property"]
+      "keywords": [
+        "minimum spanning tree",
+        "Kruskal",
+        "Prim",
+        "cut property",
+        "cycle property"
+      ]
     },
     {
       "id": "flow",
       "name": "最大流／匹配",
       "textbook": "CLRS 26",
-      "keywords": ["max flow", "Ford-Fulkerson", "Edmonds-Karp", "min cut", "bipartite matching", "max-flow min-cut"]
+      "keywords": [
+        "max flow",
+        "Ford-Fulkerson",
+        "Edmonds-Karp",
+        "min cut",
+        "bipartite matching",
+        "max-flow min-cut"
+      ]
     },
     {
       "id": "amortized",
       "name": "攤還分析",
       "textbook": "CLRS 17",
-      "keywords": ["amortized analysis", "potential function", "aggregate method", "accounting method", "dynamic array", "k-bit counter"]
+      "keywords": [
+        "amortized analysis",
+        "potential function",
+        "aggregate method",
+        "accounting method",
+        "dynamic array",
+        "k-bit counter"
+      ]
     },
     {
       "id": "unionfind",
       "name": "互斥集合 Union-Find",
       "textbook": "CLRS 19",
-      "keywords": ["union-find", "disjoint set", "path compression", "union by rank"]
+      "keywords": [
+        "union-find",
+        "disjoint set",
+        "path compression",
+        "union by rank"
+      ]
     },
     {
       "id": "stringmatch",
       "name": "字串比對",
       "textbook": "CLRS 32",
-      "keywords": ["KMP", "prefix function", "finite automaton matching", "Rabin-Karp", "string matching"]
+      "keywords": [
+        "KMP",
+        "prefix function",
+        "finite automaton matching",
+        "Rabin-Karp",
+        "string matching"
+      ]
     },
     {
       "id": "npc",
       "name": "NP完備與歸約",
       "textbook": "CLRS 34",
-      "keywords": ["NP-complete", "reduction", "SAT", "3-SAT", "vertex cover", "subset-sum", "TSP", "Hamiltonian", "independent set", "clique"]
+      "keywords": [
+        "NP-complete",
+        "reduction",
+        "SAT",
+        "3-SAT",
+        "vertex cover",
+        "subset-sum",
+        "TSP",
+        "Hamiltonian",
+        "independent set",
+        "clique"
+      ]
     },
     {
       "id": "approx",
       "name": "近似演算法／LP",
       "textbook": "CLRS 35 / Williamson-Shmoys",
-      "keywords": ["approximation algorithm", "LP relaxation", "integrality gap", "FPTAS", "PTAS", "set cover greedy", "LP rounding", "approximation ratio"]
+      "keywords": [
+        "approximation algorithm",
+        "LP relaxation",
+        "integrality gap",
+        "FPTAS",
+        "PTAS",
+        "set cover greedy",
+        "LP rounding",
+        "approximation ratio",
+        "vertex cover 2-approximation",
+        "metric TSP",
+        "bin packing"
+      ]
     },
     {
       "id": "randomized",
       "name": "隨機演算法",
       "textbook": "CLRS 5",
-      "keywords": ["randomized algorithm", "expected running time", "randomized quicksort", "indicator random variable"]
+      "keywords": [
+        "randomized algorithm",
+        "expected running time",
+        "randomized quicksort",
+        "indicator random variable"
+      ]
     },
     {
       "id": "divide",
       "name": "分治",
       "textbook": "CLRS 4",
-      "keywords": ["divide and conquer", "closest pair", "Strassen", "merge"]
+      "keywords": [
+        "divide and conquer",
+        "closest pair",
+        "Strassen",
+        "merge"
+      ]
     },
     {
       "id": "geometry",
       "name": "計算幾何",
       "textbook": "CLRS 33",
-      "keywords": ["computational geometry", "segment intersection", "point in polygon", "convex hull", "triangulation"]
+      "keywords": [
+        "computational geometry",
+        "segment intersection",
+        "point in polygon",
+        "convex hull",
+        "triangulation"
+      ]
     },
     {
       "id": "aibio",
       "name": "AI／生物資訊應用題",
       "textbook": "應用題（114 趨勢）",
-      "keywords": ["k-means", "c-means clustering", "sequence alignment", "GNN message passing", "Weisfeiler-Lehman", "k-mer"]
+      "keywords": [
+        "k-means",
+        "c-means clustering",
+        "sequence alignment",
+        "GNN message passing",
+        "Weisfeiler-Lehman",
+        "k-mer"
+      ]
     },
     {
       "id": "matrix",
       "name": "矩陣運算",
       "textbook": "CLRS 28（聖經未列，另開）",
-      "keywords": ["matrix multiplication", "LU decomposition", "matrix inversion", "linear equations solving"]
+      "keywords": [
+        "matrix multiplication",
+        "LU decomposition",
+        "matrix inversion",
+        "linear equations solving"
+      ]
     },
     {
       "id": "fft",
       "name": "多項式與 FFT",
       "textbook": "CLRS 30（聖經未列，另開）",
-      "keywords": ["FFT", "DFT", "polynomial multiplication", "convolution"]
+      "keywords": [
+        "FFT",
+        "DFT",
+        "polynomial multiplication",
+        "convolution"
+      ]
     },
     {
       "id": "numbertheory",
       "name": "數論演算法",
       "textbook": "CLRS 31（聖經未列，另開）",
-      "keywords": ["GCD", "Euclid", "modular arithmetic", "Chinese remainder", "RSA", "primality test"]
+      "keywords": [
+        "GCD",
+        "Euclid",
+        "modular arithmetic",
+        "Chinese remainder",
+        "RSA",
+        "primality test"
+      ]
     },
     {
       "id": "parallel",
       "name": "平行演算法",
       "textbook": "CLRS 26（聖經未列，另開）",
-      "keywords": ["parallel algorithm", "work", "span", "fork-join", "parallel scheduling"]
+      "keywords": [
+        "parallel algorithm",
+        "work",
+        "span",
+        "fork-join",
+        "parallel scheduling"
+      ]
     },
     {
       "id": "online",
       "name": "線上演算法",
       "textbook": "CLRS 27（聖經未列，另開）",
-      "keywords": ["online algorithm", "competitive analysis", "competitive ratio"]
+      "keywords": [
+        "online algorithm",
+        "competitive analysis",
+        "competitive ratio"
+      ]
     }
   ]
 }

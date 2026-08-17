@@ -8,7 +8,10 @@
 const ENGINE = (() => {
   // ── 出現機率旋鈕（可調）──
   const EXAM_KW_BOOST = 1.3; // 含考古題熱門關鍵字的題（含課本「類似題」）出現權重 ×1.3
-  const EXAM_SELF_WEIGHT = 0.7; // 考古題本身權重折扣，避免同一批考古題太常重複出現（讓類似題更常出現）
+  // 考古題本身相對於課本題的權重倍率（可由 UI 調整；預設 0.7＝略偏課本類似題）
+  let examSelfWeight = 0.7;
+  function setExamWeight(v){ if(v>0 && isFinite(v)) examSelfWeight = v; }
+  function getExamWeight(){ return examSelfWeight; }
 
   // 目前科目狀態（由 setSubject 切換）
   let UNITS, BANK, cfg, HOT_EXAM_KW = new Set();
@@ -28,7 +31,7 @@ const ENGINE = (() => {
   // 權重 = 錯題題海權重 ×（含熱門考古關鍵字則 ×1.3）×（考古題本身 ×0.7）。
   function combWeight(q){
     const boost = q.keywords.some(k=>HOT_EXAM_KW.has(k)) ? EXAM_KW_BOOST : 1;
-    const selfW = srcOf(q)==="exam" ? EXAM_SELF_WEIGHT : 1;
+    const selfW = srcOf(q)==="exam" ? examSelfWeight : 1;
     return SRS.weight(q.id) * boost * selfW;
   }
 
@@ -40,6 +43,17 @@ const ENGINE = (() => {
     let r = Math.random()*total;
     for (let i=0;i<pool.length;i++){ r-=weights[i]; if (r<=0) return pool[i]; }
     return pool[pool.length-1];
+  }
+  // 依單元占比計算各單元配額（最大餘數法，總和＝N）；權重<=0 或缺 → 視為 1
+  function computeQuota(sel, ratios, N){
+    const w = sel.map(u => (ratios && ratios[u]>0) ? ratios[u] : 1);
+    const sum = w.reduce((a,b)=>a+b,0) || sel.length || 1;
+    const raw = w.map(x => x/sum*N);
+    const q = raw.map(Math.floor);
+    let rem = N - q.reduce((a,b)=>a+b,0);
+    const frac = raw.map((x,i)=>[i, x-Math.floor(x)]).sort((a,b)=>b[1]-a[1]);
+    for(let k=0; k<rem && frac.length; k++) q[frac[k%frac.length][0]]++;
+    return sel.map((u,i)=>({unit:u, n:q[i]}));
   }
   function poolFor(selectedUnitIds, opts){
     opts=opts||{};
@@ -79,9 +93,10 @@ const ENGINE = (() => {
     const examN = pool.filter(q=>srcOf(q)==="exam").length, tbN = pool.filter(q=>srcOf(q)==="textbook").length;
     // 在固定題數內能否涵蓋全部必需關鍵字？（粗估：題數 < 關鍵字數時必然蓋不全）
     const fullyCoverable = targetN >= reqSet.size ? true : null; // null=可能蓋不全，實際由 generate 判定
+    const unitQuota = opts.mode==="ratio" ? computeQuota(selectedUnitIds, opts.unitRatios, targetN) : null;
     return { poolSize:pool.length, examN, tbN, targetN, fixedN,
              singleYear: cfg.historicalBaseline.singleYearQuestions, overshoot: cfg.overshootRatio,
-             reqKw:[...reqSet], gapKw:[...new Set(gapKw)], typeTargets, fullyCoverable };
+             reqKw:[...reqSet], gapKw:[...new Set(gapKw)], typeTargets, fullyCoverable, unitQuota };
   }
 
   function generate(selectedUnitIds, opts){
@@ -90,42 +105,66 @@ const ENGINE = (() => {
     const p = plan(selectedUnitIds, opts);
     let chosen=[]; const chosenIds=new Set();
 
-    // 1) 集合覆蓋：固定題數預算內盡量涵蓋必需關鍵字。
-    //    以「新覆蓋關鍵字數 × 題海權重」加權隨機挑題（非貪婪），讓課本類似題也有機會雀屏中選，
-    //    避免關鍵字標較多的考古題在覆蓋階段壟斷。
-    const uncovered=new Set(p.reqKw);
-    while(uncovered.size>0 && chosen.length<p.targetN){
-      // 鎖定「目前最稀有、最難被覆蓋的一個未覆蓋關鍵字」，只在能覆蓋它的候選間加權隨機，
-      // 權重純用題海權重（不因考古題標的關鍵字多而加成）→ 兼顧覆蓋效率與降低考古占比。
-      let rare=null, rareCnt=Infinity;
-      uncovered.forEach(k=>{ const c=pool.filter(q=>!chosenIds.has(q.id)&&q.keywords.includes(k)).length;
-        if(c>0 && c<rareCnt){ rareCnt=c; rare=k; } });
-      if(!rare) break;
-      const cands=pool.filter(q=>!chosenIds.has(q.id) && q.keywords.includes(rare));
-      const ws=cands.map(q=>combWeight(q));
-      let tot=ws.reduce((a,b)=>a+b,0), r=Math.random()*tot, pick=cands[cands.length-1];
-      for(let i=0;i<cands.length;i++){ r-=ws[i]; if(r<=0){ pick=cands[i]; break; } }
-      chosen.push(pick); chosenIds.add(pick.id);
-      pick.keywords.forEach(k=>uncovered.delete(k));
+    if(opts.mode==="ratio"){
+      // 依單元占比：把 targetN 按配額分到各單元，組內以題海權重加權隨機挑
+      const quotas = p.unitQuota || computeQuota(selectedUnitIds, opts.unitRatios, p.targetN);
+      quotas.forEach(({unit,n})=>{
+        let need=n;
+        while(need>0){
+          const cand=pool.filter(q=>!chosenIds.has(q.id) && q.units.includes(unit));
+          const pick=weightedPick(cand, chosenIds);
+          if(!pick) break; // 該單元題庫已用盡
+          chosen.push(pick); chosenIds.add(pick.id); need--;
+        }
+      });
+      // 某些單元題不夠時，從全域補足到 targetN
+      while(chosen.length<p.targetN){
+        const pick=weightedPick(pool, chosenIds);
+        if(!pick) break;
+        chosen.push(pick); chosenIds.add(pick.id);
+      }
+    } else {
+      // 1) 集合覆蓋：固定題數預算內盡量涵蓋必需關鍵字。
+      //    以「新覆蓋關鍵字數 × 題海權重」加權隨機挑題（非貪婪），讓課本類似題也有機會雀屏中選，
+      //    避免關鍵字標較多的考古題在覆蓋階段壟斷。
+      const uncovered=new Set(p.reqKw);
+      while(uncovered.size>0 && chosen.length<p.targetN){
+        // 鎖定「目前最稀有、最難被覆蓋的一個未覆蓋關鍵字」，只在能覆蓋它的候選間加權隨機，
+        // 權重純用題海權重（不因考古題標的關鍵字多而加成）→ 兼顧覆蓋效率與降低考古占比。
+        let rare=null, rareCnt=Infinity;
+        uncovered.forEach(k=>{ const c=pool.filter(q=>!chosenIds.has(q.id)&&q.keywords.includes(k)).length;
+          if(c>0 && c<rareCnt){ rareCnt=c; rare=k; } });
+        if(!rare) break;
+        const cands=pool.filter(q=>!chosenIds.has(q.id) && q.keywords.includes(rare));
+        const ws=cands.map(q=>combWeight(q));
+        let tot=ws.reduce((a,b)=>a+b,0), r=Math.random()*tot, pick=cands[cands.length-1];
+        for(let i=0;i<cands.length;i++){ r-=ws[i]; if(r<=0){ pick=cands[i]; break; } }
+        chosen.push(pick); chosenIds.add(pick.id);
+        pick.keywords.forEach(k=>uncovered.delete(k));
+      }
+
+      // 2) 補足題數到 targetN，盡量貼合題型分佈，並用 SRS 權重
+      const typeCount={}; chosen.forEach(q=>typeCount[q.type]=(typeCount[q.type]||0)+1);
+      while(chosen.length<p.targetN){
+        // 找目前最缺的題型
+        let wantType=null, maxDef=-Infinity;
+        Object.keys(p.typeTargets).forEach(t=>{
+          const def=p.typeTargets[t]-(typeCount[t]||0);
+          if(def>maxDef){ maxDef=def; wantType=t; }
+        });
+        let cand=pool.filter(q=>!chosenIds.has(q.id) && q.type===wantType);
+        if(!cand.length) cand=pool.filter(q=>!chosenIds.has(q.id));
+        if(!cand.length) break;
+        const pick=weightedPick(cand,chosenIds);
+        if(!pick) break;
+        chosen.push(pick); chosenIds.add(pick.id);
+        typeCount[pick.type]=(typeCount[pick.type]||0)+1;
+      }
     }
 
-    // 2) 補足題數到 targetN，盡量貼合題型分佈，並用 SRS 權重
-    const typeCount={}; chosen.forEach(q=>typeCount[q.type]=(typeCount[q.type]||0)+1);
-    while(chosen.length<p.targetN){
-      // 找目前最缺的題型
-      let wantType=null, maxDef=-Infinity;
-      Object.keys(p.typeTargets).forEach(t=>{
-        const def=p.typeTargets[t]-(typeCount[t]||0);
-        if(def>maxDef){ maxDef=def; wantType=t; }
-      });
-      let cand=pool.filter(q=>!chosenIds.has(q.id) && q.type===wantType);
-      if(!cand.length) cand=pool.filter(q=>!chosenIds.has(q.id));
-      if(!cand.length) break;
-      const pick=weightedPick(cand,chosenIds);
-      if(!pick) break;
-      chosen.push(pick); chosenIds.add(pick.id);
-      typeCount[pick.type]=(typeCount[pick.type]||0)+1;
-    }
+    // 覆蓋率（供考試頁提示；占比模式不保證涵蓋全部關鍵字）
+    const covered=new Set(); chosen.forEach(q=>q.keywords.forEach(k=>covered.add(k)));
+    const uncovered=new Set(p.reqKw.filter(k=>!covered.has(k)));
 
     // 3) 題組完整性：若選到某題組的一部分，補齊同組其餘小題（題組不可分割）
     const chosenSet=new Set(chosen.map(q=>q.id));
@@ -150,5 +189,5 @@ const ENGINE = (() => {
     };
   }
 
-  return { setSubject, plan, generate, unitById, srcOf, UNITS:null, BANK:null, cfg:null };
+  return { setSubject, plan, generate, unitById, srcOf, setExamWeight, getExamWeight, UNITS:null, BANK:null, cfg:null };
 })();

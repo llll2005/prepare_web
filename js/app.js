@@ -7,6 +7,7 @@
   // ── 目前科目狀態 ──
   let SUBJ, IMG, CUR, HIST, EXAMDIR, BOOKDIR, BOOKNAMES;
   let selectedUnits = new Set();
+  let unitWeightVals = {}; // 依單元占比模式：uid → 使用者填的權重字串
   let timerId = null;
 
   function selectSubject(id){
@@ -17,6 +18,7 @@
     const tag=$("#subjectTag"); if(tag) tag.textContent = SUBJ.name;
     const sel=$("#subjectSel"); if(sel) sel.value = id;
     selectedUnits.clear();
+    unitWeightVals = {};
     $("#countOverride").value = "";
     updateSourceLabels();
     if(timerId) clearInterval(timerId);
@@ -36,18 +38,57 @@
     if(el2) el2.textContent=`課本習題（${books.join("／")||"課本"}，${tb} 題）`;
   }
 
+  function genMode(){ return (document.querySelector('input[name="genMode"]:checked')||{}).value || "random"; }
   function getOpts(){
     const sources=[];
     if($("#srcExam").checked) sources.push("exam");
     if($("#srcTb").checked) sources.push("textbook");
     const co=parseInt($("#countOverride").value,10);
+    const mode=genMode();
+    let unitRatios=null;
+    if(mode==="ratio"){ unitRatios={}; selectedUnits.forEach(uid=>{ const v=parseFloat(unitWeightVals[uid]); unitRatios[uid]=(v>0?v:1); }); }
     return { sources: sources.length?sources:["exam"], countOverride: (co>0?co:0),
-             excludeCorrect: $("#excludeCorrect").checked };
+             excludeCorrect: $("#excludeCorrect").checked, mode, unitRatios };
   }
+  // 依單元占比模式：為每個已選單元渲染權重輸入欄
+  function renderUnitWeights(){
+    const box=$("#unitWeights"); if(!box) return;
+    const show = genMode()==="ratio" && selectedUnits.size>0;
+    box.hidden=!show;
+    if(!show){ box.innerHTML=""; return; }
+    box.innerHTML="";
+    ENGINE.UNITS.units.filter(u=>selectedUnits.has(u.id)).forEach(u=>{
+      const row=document.createElement("div"); row.className="uw-row";
+      const name=document.createElement("span"); name.className="uw-name"; name.textContent=u.name;
+      const inp=document.createElement("input"); inp.type="number"; inp.min="0"; inp.step="1";
+      inp.placeholder="1"; inp.className="uw-input"; inp.value=unitWeightVals[u.id]||"";
+      inp.addEventListener("input",()=>{ unitWeightVals[u.id]=inp.value; updateScope(); });
+      row.appendChild(name); row.appendChild(inp); box.appendChild(row);
+    });
+  }
+  document.querySelectorAll('input[name="genMode"]').forEach(r=> r.addEventListener("change",()=>{
+    $("#ratioHint").hidden = genMode()!=="ratio";
+    renderUnitWeights(); updateScope();
+  }));
   ["srcExam","srcTb","excludeCorrect","countOverride"].forEach(id=>{
     const el=document.getElementById(id);
     el.addEventListener("change",updateScope); el.addEventListener("input",updateScope);
   });
+
+  // ── 考古題比重滑桿 ── 0–100 → 倍率 0.25×–4×（50＝均衡 1.0×，預設 37≈0.7×）
+  function sliderToMult(v){ return 0.25 * Math.pow(16, v/100); }
+  function examWeightLabel(m){
+    if(m<0.5) return "課本為主"; if(m<0.8) return "偏課本";
+    if(m<=1.25) return "均衡"; if(m<=2.5) return "偏考古"; return "考古為主";
+  }
+  function applyExamWeight(save){
+    const v=parseInt($("#examWeight").value,10)||0;
+    const m=sliderToMult(v);
+    ENGINE.setExamWeight(m);
+    const el=$("#examWeightVal"); if(el) el.textContent=`×${m.toFixed(2)}（${examWeightLabel(m)}）`;
+    if(save) localStorage.setItem("pref_exam_weight", String(v));
+  }
+  $("#examWeight").addEventListener("input",()=>applyExamWeight(true));
 
   /* ---------- 畫面切換 ---------- */
   function showScreen(name){
@@ -56,6 +97,8 @@
     $$(".navbtn").forEach(b=>b.classList.toggle("active", b.dataset.screen===name));
     if(name==="pool") renderPool();
     if(name==="history") renderHistory();
+    if(name==="heat") renderHeat();
+    if(name==="trend") renderTrend();
   }
   $$(".navbtn").forEach(b=> b.addEventListener("click",()=>showScreen(b.dataset.screen)));
 
@@ -65,13 +108,26 @@
     const exam=qs.filter(q=>ENGINE.srcOf(q)==="exam").length;
     return { total:qs.length, exam };
   }
+  // 目前科目各單元的考古命中最大值（熱度分級用；至少為 1 以免除以 0）
+  function maxExamHits(){ return Math.max(1, ...ENGINE.UNITS.units.map(u=>unitCounts(u.id).exam)); }
+  // 以「命中數 / 該科最大命中數」分級：高頻✦✦✦ ≥⅔、中頻✦✦ ≥⅓、低頻✦ ≥1、冷門 0
+  function heatTier(exam, maxExam){
+    if(exam<=0) return {fires:0, label:"冷門", cls:"cold"};
+    const r=exam/maxExam;
+    if(r>=0.66) return {fires:3, label:"高頻", cls:"hot3"};
+    if(r>=0.33) return {fires:2, label:"中頻", cls:"hot2"};
+    return {fires:1, label:"低頻", cls:"hot1"};
+  }
   function renderUnits(){
     const wrap=$("#unitList"); wrap.innerHTML="";
+    const mx=maxExamHits();
     ENGINE.UNITS.units.forEach(u=>{
       const div=document.createElement("div");
       div.className="unit-card"+(selectedUnits.has(u.id)?" sel":"");
       const c=unitCounts(u.id);
-      div.innerHTML=`<div class="uname">${u.name}</div>
+      const t=heatTier(c.exam,mx);
+      const badge=`<span class="uheat ${t.cls}" title="歷屆考古命中 ${c.exam} 題">${t.fires?`<span class="stars">${"✦".repeat(t.fires)}</span> `:""}${t.label}</span>`;
+      div.innerHTML=`<div class="uname">${u.name}${badge}</div>
         <div class="ubook">${u.textbook}</div>
         <div class="ucount">${c.total} 題（歷屆考古 ${c.exam}）・${u.keywords.length} 關鍵字</div>`;
       div.addEventListener("click",()=>{
@@ -85,18 +141,26 @@
   function updateScope(){
     const n=selectedUnits.size;
     $("#scopeSummary").textContent = n? `已選 ${n} 單元` : "尚未選擇單元";
+    renderUnitWeights();
     const prev=$("#genPreview"), btn=$("#startBtn");
     if(!n){ prev.textContent="請至少選一個單元。"; btn.disabled=true; return; }
     btn.disabled=false;
-    const p=ENGINE.plan([...selectedUnits], getOpts());
+    const opts=getOpts();
+    const p=ENGINE.plan([...selectedUnits], opts);
     if(p.poolSize===0){
       btn.disabled=true;
       prev.innerHTML=`<span style="color:var(--warn)">所選範圍在目前篩選下沒有題目可出（可能已全部答對，或來源都未勾選）。取消「排除已答對的題」或勾選題目來源即可。</span>`;
       return;
     }
-    const types=Object.entries(p.typeTargets).filter(([,v])=>v>0).map(([t,v])=>`${t}${v}`).join("・");
-    const co=getOpts().countOverride;
+    const co=opts.countOverride;
     const cntDesc = co? `自訂 <b>${p.targetN}</b> 題` : `固定 <b>${p.targetN}</b> 題（歷屆單年約 ${p.singleYear} 題 ×${p.overshoot}，<b>不隨範圍變動</b>）`;
+    if(opts.mode==="ratio" && p.unitQuota){
+      const parts=p.unitQuota.map(q=>`${ENGINE.unitById(q.unit)?.name||q.unit} <b>${q.n}</b>`).join("・");
+      prev.innerHTML=`本卷${cntDesc}。<b>依單元占比</b>分配：${parts}。題庫可用 ${p.poolSize} 題（考古 ${p.examN}・課本 ${p.tbN}）。`
+        +`<br><span class="muted">按你填的權重（留空＝1）分題；某單元題數不足時自動由其他單元補足。此模式不強制涵蓋全部關鍵字。</span>`;
+      return;
+    }
+    const types=Object.entries(p.typeTargets).filter(([,v])=>v>0).map(([t,v])=>`${t}${v}`).join("・");
     prev.innerHTML=`本卷${cntDesc}。題型比例貼合歷屆（${types}）。題庫可用 ${p.poolSize} 題（考古 ${p.examN}・課本 ${p.tbN}）。`
       +`<br><span class="muted">所選範圍含 ${p.reqKw.length} 個關鍵字；`
       +(p.targetN>=p.reqKw.length
@@ -354,6 +418,142 @@
     });
   }
 
+  /* ---------- 考古熱區 ---------- */
+  let heatWindow=0; // 0＝全部；n＝近 n 年
+  function renderHeat(){
+    const examQs=ENGINE.BANK.filter(q=>ENGINE.srcOf(q)==="exam" && q.year>0);
+    const maxY=examQs.length?Math.max(...examQs.map(q=>q.year)):0;
+    const minY=examQs.length?Math.min(...examQs.map(q=>q.year)):0;
+    const sinceY = heatWindow>0 ? Math.max(minY, maxY-heatWindow+1) : minY;
+    const winQs=examQs.filter(q=>q.year>=sinceY);
+    // 各單元在此年份範圍內的考古命中次數
+    const rows=ENGINE.UNITS.units.map(u=>{
+      const exam=winQs.filter(q=>q.units.includes(u.id)).length;
+      return {u, exam, total:unitCounts(u.id).total};
+    }).sort((a,b)=> b.exam-a.exam || b.total-a.total);
+    const mx=Math.max(1, ...rows.map(r=>r.exam));
+    const hits=rows.reduce((a,r)=>a+r.exam,0);
+    const hot=rows.filter(r=>heatTier(r.exam,mx).fires===3).map(r=>r.u.name);
+    const cold=rows.filter(r=>r.exam===0).map(r=>r.u.name);
+    const span = heatWindow>0 ? `近 ${heatWindow} 年 ${sinceY}–${maxY}` : `全歷屆 ${minY}–${maxY}`;
+    const note=$("#heatNote");
+    note.innerHTML=`統計範圍：<b>${span}</b>，考古 <b>${winQs.length}</b> 題、共 <b>${hits}</b> 次單元命中。`
+      + (hot.length? `<br><span class="stars hot3">✦✦✦</span> <b>此範圍高頻</b>：${hot.join("、")}` : "")
+      + (cold.length? `<br><span style="color:var(--muted)">此範圍 0 命中（可略過或最後補）：${cold.join("、")}</span>` : "");
+    const wrap=$("#heatList"); wrap.innerHTML="";
+    rows.forEach(r=>{
+      const t=heatTier(r.exam,mx);
+      const pct=Math.round(r.exam/mx*100);
+      const div=document.createElement("div"); div.className="heat-row "+t.cls;
+      div.innerHTML=`<div class="heat-name">${r.u.name}</div>`
+        +`<div class="heat-bar-wrap"><div class="heat-bar" style="width:${Math.max(pct,r.exam>0?4:0)}%"></div></div>`
+        +`<div class="heat-val"><b>${r.exam}</b> 命中 <span class="heat-fire">${"✦".repeat(t.fires)||"·"}</span></div>`;
+      wrap.appendChild(div);
+    });
+  }
+  // 「統計範圍」篩選鈕（近 n 年）
+  $$(".hfbtn").forEach(b=> b.addEventListener("click",()=>{
+    heatWindow=parseInt(b.dataset.n,10)||0;
+    $$(".hfbtn").forEach(x=>x.classList.toggle("active", x===b));
+    renderHeat();
+  }));
+
+  /* ---------- 趨勢預測 ---------- */
+  const TREND_YEARS=[102,103,104,105,106,107,108,109,110,111,112,113,114];
+  const DS_STRUCT=new Set(["lineardata","tree","heap","hash","unionfind"]); // 其餘 ds 單元＝演算法
+  function domOf(sid,units){
+    const d=new Set();
+    (units||[]).forEach(u=>{
+      if(sid==="math") d.add(u.startsWith("la-")?"線性代數":"離散數學");
+      else if(sid==="caos") d.add(u.startsWith("ca-")?"計算機結構":"作業系統");
+      else if(sid==="ds") d.add(DS_STRUCT.has(u)?"資料結構":"演算法");
+    });
+    return d;
+  }
+  function trendData(){
+    const dom={}, ai={"資料平行/GPU":{}, "AI 加速器":{}, "ML/生資應用":{}};
+    Object.keys(window.SUBJECTS).forEach(sid=>{
+      const ex=window.SUBJECTS[sid].banks.filter(Boolean).flatMap(b=>b.questions||[]).filter(q=>q.year>0);
+      ex.forEach(q=>{
+        domOf(sid,q.units).forEach(dn=>{ (dom[dn]=dom[dn]||{})[q.year]=(dom[dn][q.year]||0)+1; });
+        const us=q.units||[];
+        if(sid==="caos"&&us.includes("ca-dlp")) ai["資料平行/GPU"][q.year]=(ai["資料平行/GPU"][q.year]||0)+1;
+        if(sid==="caos"&&us.includes("ca-dsa")) ai["AI 加速器"][q.year]=(ai["AI 加速器"][q.year]||0)+1;
+        if(sid==="ds"&&us.includes("aibio"))   ai["ML/生資應用"][q.year]=(ai["ML/生資應用"][q.year]||0)+1;
+      });
+    });
+    return {dom, ai};
+  }
+  // 自製 SVG 折線圖：細線、節點附 <title> tooltip、退讓網格、單一 y 軸
+  function svgLine({title, series, yMax, w=480, h=210, directLabel=false}){
+    const yrs=TREND_YEARS, mL=28, mR=directLabel?60:16, mT=title?20:8, mB=20;
+    const pw=w-mL-mR, ph=h-mT-mB;
+    const X=i=> mL + (yrs.length>1? pw*i/(yrs.length-1) : pw/2);
+    const Y=v=> mT + ph - ph*(v/yMax);
+    let g="";
+    const step= yMax<=4?1 : yMax<=10?2 : Math.ceil(yMax/5);
+    for(let v=0; v<=yMax; v+=step){
+      g+=`<line x1="${mL}" y1="${Y(v).toFixed(1)}" x2="${w-mR}" y2="${Y(v).toFixed(1)}" class="cx-grid"/>`;
+      g+=`<text x="${mL-4}" y="${(Y(v)+3).toFixed(1)}" class="cx-ylab" text-anchor="end">${v}</text>`;
+    }
+    yrs.forEach((yr,i)=>{ if(i%2===0||i===yrs.length-1) g+=`<text x="${X(i).toFixed(1)}" y="${h-5}" class="cx-xlab" text-anchor="middle">${yr}</text>`; });
+    series.forEach(s=>{
+      const pts=yrs.map((yr,i)=>[X(i),Y(s.vals[i])]);
+      const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+      g+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      pts.forEach((p,i)=> g+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.2" fill="${s.color}" class="cx-dot"><title>${s.name}·${yrs[i]}年：${s.vals[i]} 題</title></circle>`);
+      if(directLabel){ const l=pts[pts.length-1]; g+=`<text x="${w-mR+4}" y="${(l[1]+3).toFixed(1)}" class="cx-dlab" fill="${s.color}">${s.name}</text>`; }
+    });
+    const ttl= title? `<text x="${mL-4}" y="12" class="cx-title">${title}</text>` : "";
+    return `<svg viewBox="0 0 ${w} ${h}" class="cx-svg" role="img" aria-label="${title||'折線圖'}">${ttl}${g}</svg>`;
+  }
+  // 堆疊長條圖：稀疏計數用長條比折線清楚（段間留 2px 表面間隙、方角）
+  function svgBars({series, yMax, w=560, h=240}){
+    const yrs=TREND_YEARS, mL=28, mR=16, mT=8, mB=20;
+    const pw=w-mL-mR, ph=h-mT-mB, band=pw/yrs.length, bw=Math.min(24, band*0.62);
+    const Y=v=> mT+ph - ph*(v/yMax);
+    let g="";
+    const step= yMax<=5?1 : Math.ceil(yMax/5);
+    for(let v=0; v<=yMax; v+=step){
+      g+=`<line x1="${mL}" y1="${Y(v).toFixed(1)}" x2="${w-mR}" y2="${Y(v).toFixed(1)}" class="cx-grid"/>`;
+      g+=`<text x="${mL-4}" y="${(Y(v)+3).toFixed(1)}" class="cx-ylab" text-anchor="end">${v}</text>`;
+    }
+    yrs.forEach((yr,i)=>{
+      const cx=mL+band*i+band/2; let acc=0;
+      series.forEach(s=>{ const v=s.vals[i]; if(v>0){ const y0=Y(acc), y1=Y(acc+v), hh=Math.max(y0-y1-2,1.5);
+        g+=`<rect x="${(cx-bw/2).toFixed(1)}" y="${y1.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" fill="${s.color}" class="cx-bar"><title>${s.name}·${yr}年：${v} 題</title></rect>`; acc+=v; } });
+      g+=`<text x="${cx.toFixed(1)}" y="${h-5}" class="cx-xlab" text-anchor="middle">${yr}</text>`;
+    });
+    return `<svg viewBox="0 0 ${w} ${h}" class="cx-svg" role="img" aria-label="AI 相關題逐年堆疊">${g}</svg>`;
+  }
+  function legendRow(series){
+    return `<div class="cx-legend">`+series.map(s=>`<span class="cx-leg"><span class="cx-sw" style="background:${s.color}"></span>${s.name}</span>`).join("")+`</div>`;
+  }
+  function renderTrend(){
+    const {dom, ai}=trendData();
+    const V=m=>TREND_YEARS.map(y=>m[y]||0);
+    const aiSeries=[
+      {name:"資料平行/GPU", color:"#0072b2", vals:V(ai["資料平行/GPU"])},
+      {name:"AI 加速器",   color:"#d55e00", vals:V(ai["AI 加速器"])},
+      {name:"ML/生資應用", color:"#009e73", vals:V(ai["ML/生資應用"])},
+    ];
+    const aiTot=TREND_YEARS.map((y,i)=>aiSeries.reduce((a,s)=>a+s.vals[i],0));
+    const aiMax=Math.max(3, ...aiTot);
+    $("#trendAI").innerHTML = legendRow(aiSeries) + svgBars({series:aiSeries, yMax:aiMax, w:560, h:240});
+    const order=["線性代數","離散數學","資料結構","演算法","計算機結構","作業系統"];
+    const grid=$("#trendGrid"); grid.innerHTML="";
+    order.forEach(dn=>{
+      const vals=V(dom[dn]||{}), mx=Math.max(3, ...vals);
+      const cell=document.createElement("div"); cell.className="chart-cell";
+      cell.innerHTML=svgLine({title:dn, series:[{name:dn,color:"#0072b2",vals}], yMax:mx, w:360, h:170});
+      grid.appendChild(cell);
+    });
+    let t=`<table class="trend-tbl"><thead><tr><th>領域</th>`+TREND_YEARS.map(y=>`<th>${y}</th>`).join("")+`<th>Σ</th></tr></thead><tbody>`;
+    order.forEach(dn=>{ const vals=V(dom[dn]||{}), tot=vals.reduce((a,b)=>a+b,0);
+      t+=`<tr><td>${dn}</td>`+vals.map(v=>`<td>${v||""}</td>`).join("")+`<td><b>${tot}</b></td></tr>`; });
+    $("#trendTable").innerHTML=t+`</tbody></table>`;
+  }
+
   /* ---------- 匯出/匯入進度 ---------- */
   $("#exportBtn").addEventListener("click",()=>{
     const blob={srs:SRS.exportState(), history:JSON.parse(localStorage.getItem(HIST)||"[]")};
@@ -404,6 +604,10 @@
 
   /* ---------- 啟動 ---------- */
   buildSubjectPicker();
+  // 還原「考古題比重」偏好（全科目共用）
+  const savedW=localStorage.getItem("pref_exam_weight");
+  if(savedW!==null) $("#examWeight").value=savedW;
+  applyExamWeight(false);
   selectSubject((window.SUBJECT_ORDER||["ds"])[0]);
   // 若有未完成的考試，回復之
   const cur=getExam();
