@@ -5,13 +5,13 @@
   const TYPES = ["選擇","複選","填空","計算","證明","設計"];
 
   // ── 目前科目狀態 ──
-  let SUBJ, IMG, CUR, HIST, EXAMDIR, BOOKDIR, BOOKNAMES;
+  let SUBJ, SUBJID, IMG, CUR, HIST, EXAMDIR, BOOKDIR, BOOKNAMES;
   let selectedUnits = new Set();
   let unitWeightVals = {}; // 依單元占比模式：uid → 使用者填的權重字串
   let timerId = null;
 
   function selectSubject(id){
-    SUBJ = window.SUBJECTS[id];
+    SUBJ = window.SUBJECTS[id]; SUBJID = id;
     IMG = SUBJ.images; CUR = id+"_current_exam"; HIST = id+"_exams_v1";
     EXAMDIR = SUBJ.examImgDir; BOOKDIR = SUBJ.bookImgDir; BOOKNAMES = SUBJ.bookNames;
     ENGINE.setSubject(id); SRS.setSubject(id);
@@ -23,6 +23,7 @@
     updateSourceLabels();
     if(timerId) clearInterval(timerId);
     renderUnits();
+    applyExamModeUI();
     showScreen("start");
   }
 
@@ -70,6 +71,48 @@
     $("#ratioHint").hidden = genMode()!=="ratio";
     renderUnitWeights(); updateScope();
   }));
+
+  /* ---------- 考試模式：模擬出題 / 考古真卷 ＋ 不限時 ---------- */
+  function examMode(){ return (document.querySelector('input[name="examMode"]:checked')||{}).value || "mock"; }
+  // 目前科目的考古題依 學校→年份 分組（無 school 欄位者歸「台大」）
+  function pastExamData(){
+    const map={};
+    ENGINE.BANK.filter(q=>ENGINE.srcOf(q)==="exam" && q.year>0).forEach(q=>{
+      const sc=q.school||"台大"; (map[sc]=map[sc]||{}); (map[sc][q.year]=map[sc][q.year]||[]).push(q);
+    });
+    return map;
+  }
+  function renderPastControls(){
+    const data=pastExamData();
+    const schools=Object.keys(data); if(!schools.length) return;
+    const scSel=$("#pastSchool"), yrSel=$("#pastYear");
+    scSel.innerHTML=schools.map(s=>`<option value="${s}">${s}</option>`).join("");
+    const sc=scSel.value||schools[0];
+    const years=Object.keys(data[sc]||{}).map(Number).sort((a,b)=>b-a); // 新→舊
+    yrSel.innerHTML=years.map(y=>`<option value="${y}">${y} 年（${data[sc][y].length} 題）</option>`).join("");
+    updatePastPreview();
+  }
+  function updatePastPreview(){
+    const data=pastExamData();
+    const sc=$("#pastSchool").value, yr=parseInt($("#pastYear").value,10);
+    const qs=(data[sc]&&data[sc][yr])||[];
+    const prev=$("#genPreview"), btn=$("#startBtn");
+    if(!qs.length){ prev.textContent="此年無題目。"; btn.disabled=true; return; }
+    btn.disabled=false;
+    const pts=qs.reduce((a,q)=>a+(q.points||0),0);
+    const types=[...new Set(qs.map(q=>q.type))].join("・");
+    const dur = $("#untimed").checked ? "不限時" : `限時 ${ENGINE.cfg.durationMinutes} 分`;
+    prev.innerHTML=`<b>${sc} ${yr} 年</b> 完整真卷：<b>${qs.length}</b> 題・配分 ${pts}・${dur}。<br><span class="muted">題型：${types}。題目照原卷題號順序呈現。</span>`;
+  }
+  function applyExamModeUI(){
+    const past=examMode()==="past";
+    $("#mockPanel").hidden=past; $("#pastPanel").hidden=!past;
+    if(past) renderPastControls(); else updateScope();
+  }
+  document.querySelectorAll('input[name="examMode"]').forEach(r=> r.addEventListener("change",applyExamModeUI));
+  $("#pastSchool").addEventListener("change",renderPastControls);
+  $("#pastYear").addEventListener("change",updatePastPreview);
+  $("#untimed").addEventListener("change",()=>{ if(examMode()==="past") updatePastPreview(); });
   ["srcExam","srcTb","excludeCorrect","countOverride"].forEach(id=>{
     const el=document.getElementById(id);
     el.addEventListener("change",updateScope); el.addEventListener("input",updateScope);
@@ -174,15 +217,26 @@
 
   /* ---------- 開始考試 ---------- */
   $("#startBtn").addEventListener("click",()=>{
-    if(!selectedUnits.size) return;
-    const ex=ENGINE.generate([...selectedUnits], getOpts());
-    if(!ex.questions.length){ alert("所選範圍沒有可出的題目 🎉\n（可能是「排除已答對的題」把剩下的都排除了，或來源都未勾選——取消勾選即可繼續複習）"); return; }
+    const untimed=$("#untimed").checked;
+    let qlist, scope, coveredAll=null, missedKw=[], durationSec, mode=examMode();
+    if(mode==="past"){
+      const data=pastExamData();
+      const sc=$("#pastSchool").value, yr=parseInt($("#pastYear").value,10);
+      qlist=((data[sc]&&data[sc][yr])||[]).slice().sort((a,b)=>(a.qnum||0)-(b.qnum||0)||(a.part||0)-(b.part||0));
+      if(!qlist.length){ alert("此年無題目。"); return; }
+      scope=[`${sc} ${yr} 年 真卷`]; durationSec=ENGINE.cfg.durationMinutes*60;
+    } else {
+      if(!selectedUnits.size) return;
+      const ex=ENGINE.generate([...selectedUnits], getOpts());
+      if(!ex.questions.length){ alert("所選範圍沒有可出的題目 🎉\n（可能是「排除已答對的題」把剩下的都排除了，或來源都未勾選——取消勾選即可繼續複習）"); return; }
+      qlist=ex.questions; scope=ex.scope; coveredAll=ex.coveredAll; missedKw=ex.missedKw; durationSec=ex.durationSec;
+    }
     const exam={
-      questions: ex.questions.map(q=>q.id),
-      meta: ex.questions.map(q=>({id:q.id,year:q.year,type:q.type,points:q.points,title:q.title,
+      questions: qlist.map(q=>q.id),
+      meta: qlist.map(q=>({id:q.id,year:q.year,type:q.type,points:q.points,title:q.title,
         stem:q.stem,keywords:q.keywords,source:q.source,book:q.book,page:q.page})),
-      answers:{}, startTime:Date.now(), durationSec:ex.durationSec,
-      scope:ex.scope, coveredAll:ex.coveredAll, missedKw:ex.missedKw
+      answers:{}, startTime:Date.now(), durationSec, untimed, mode,
+      scope, coveredAll, missedKw
     };
     localStorage.setItem(CUR, JSON.stringify(exam));
     renderExam(); showScreen("exam");
@@ -194,8 +248,11 @@
   function renderExam(){
     const ex=getExam(); if(!ex) return;
     $("#examScope").textContent="範圍："+ex.scope.join("、");
-    $("#examMeta").textContent=`共 ${ex.questions.length} 題・限時 ${Math.round(ex.durationSec/60)} 分`
-      + (ex.coveredAll? "・已涵蓋所選範圍全部關鍵字" : `・本卷涵蓋部分關鍵字（範圍大於單卷容量，剩 ${ex.missedKw.length} 個待下一卷）`);
+    const timeStr = ex.untimed ? "不限時（正計時）" : `限時 ${Math.round(ex.durationSec/60)} 分`;
+    let cov;
+    if(ex.mode==="past") cov="・完整真卷（原卷題序）";
+    else cov = ex.coveredAll? "・已涵蓋所選範圍全部關鍵字" : `・本卷涵蓋部分關鍵字（範圍大於單卷容量，剩 ${(ex.missedKw||[]).length} 個待下一卷）`;
+    $("#examMeta").textContent=`共 ${ex.questions.length} 題・${timeStr}${cov}`;
     const wrap=$("#examQuestions"); wrap.innerHTML="";
     ex.meta.forEach((q,i)=>{
       const card=document.createElement("div"); card.className="q-card";
@@ -239,9 +296,15 @@
     const tick=()=>{
       const ex=getExam(); if(!ex){clearInterval(timerId);return;}
       const elapsed=(Date.now()-ex.startTime)/1000;
+      const t=$("#timer");
+      if(ex.untimed){ // 不限時：正計時、不自動交卷
+        const e=Math.floor(elapsed), m=Math.floor(e/60), s=e%60;
+        t.textContent=`⏱ ${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+        t.className="timer up"; return;
+      }
       let rem=Math.max(0, Math.round(ex.durationSec-elapsed));
       const m=Math.floor(rem/60), s=rem%60;
-      const t=$("#timer"); t.textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+      t.textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
       t.className="timer"+(rem<=60?" danger":rem<=300?" warn":"");
       if(rem<=0){ clearInterval(timerId); alert("時間到！自動送出作答。"); submitExam(); }
     };
@@ -268,7 +331,7 @@
     let md=`# 台大資工所 模擬考作答卷 — 資料結構與演算法\n\n`;
     md+=`- 日期：${new Date(ex.startTime).toLocaleString("zh-TW")}\n`;
     md+=`- 考試範圍（單元）：${ex.scope.join("、")}\n`;
-    md+=`- 題數：${ex.questions.length}　限時：${Math.round(ex.durationSec/60)} 分　實際用時：${fmtDur(used)}\n`;
+    md+=`- 題數：${ex.questions.length}　${ex.untimed?"不限時":"限時 "+Math.round(ex.durationSec/60)+" 分"}　實際用時：${fmtDur(used)}\n`;
     md+=`- 配分總計：${ex.meta.reduce((a,q)=>a+(q.points||0),0)} 分\n\n`;
     md+=`> 請依每題的「配分、題型、關鍵字、原卷頁面圖路徑」批改我的作答。對於選擇/複選請判定選項對錯；證明/設計/計算請評估正確性與完整度。批改後請逐題給「✓對／○部分或未答／✗錯」，並簡述錯在哪、應如何訂正。\n\n---\n`;
     ex.meta.forEach((q,i)=>{
@@ -470,20 +533,79 @@
     });
     return d;
   }
-  function trendData(){
-    const dom={}, ai={"資料平行/GPU":{}, "AI 加速器":{}, "ML/生資應用":{}};
-    Object.keys(window.SUBJECTS).forEach(sid=>{
-      const ex=window.SUBJECTS[sid].banks.filter(Boolean).flatMap(b=>b.questions||[]).filter(q=>q.year>0);
-      ex.forEach(q=>{
-        domOf(sid,q.units).forEach(dn=>{ (dom[dn]=dom[dn]||{})[q.year]=(dom[dn][q.year]||0)+1; });
-        const us=q.units||[];
-        if(sid==="caos"&&us.includes("ca-dlp")) ai["資料平行/GPU"][q.year]=(ai["資料平行/GPU"][q.year]||0)+1;
-        if(sid==="caos"&&us.includes("ca-dsa")) ai["AI 加速器"][q.year]=(ai["AI 加速器"][q.year]||0)+1;
-        if(sid==="ds"&&us.includes("aibio"))   ai["ML/生資應用"][q.year]=(ai["ML/生資應用"][q.year]||0)+1;
-      });
-    });
-    return {dom, ai};
+  function typeBucket(t){ return t==="計算"?"計算型" : (t==="證明"||t==="設計")?"論述型" : "選填型"; }
+  function seriesByUnit(ex, uid){ const m={}; ex.forEach(q=>{ if((q.units||[]).includes(uid)) m[q.year]=(m[q.year]||0)+1; }); return m; }
+  function trendTableHtml(domains, domMap){
+    const V=m=>TREND_YEARS.map(y=>m[y]||0);
+    let t=`<table class="trend-tbl"><thead><tr><th>領域</th>`+TREND_YEARS.map(y=>`<th>${y}</th>`).join("")+`<th>Σ</th></tr></thead><tbody>`;
+    domains.forEach(d=>{ const vals=V(domMap[d]||{}), tot=vals.reduce((a,b)=>a+b,0);
+      t+=`<tr><td>${d}</td>`+vals.map(v=>`<td>${v||""}</td>`).join("")+`<td><b>${tot}</b></td></tr>`; });
+    return t+`</tbody></table>`;
   }
+  // 各科的趨勢文案（圖表由即時資料算，文字為分析結論）
+  const TREND_ED={
+    ds:{
+      name:"資料結構與演算法", domains:["資料結構","演算法"],
+      domainNote:"⚠ 演算法 114 年 18 題，是該年<b>改制成「多小題」</b>（選擇/複選為主），題量暴增≠難度暴增。",
+      special:{kind:"line", unit:"aibio", color:"#009e73", title:"ML／生資應用題逐年",
+        note:"114 年一次冒出 GNN／WL 頂點排序、c-means 分群、蛋白質序列比對 DP——演算法開始「包 ML 情境」。"},
+      typeNarrative:"<b>題型劇烈「機讀化」。</b>早期（102–108）證明／設計／填空各約兩成、題型多元；近年（111–114）<b>選擇 50%＋複選 28%＝78%</b>，計算／證明／設計全萎縮到 10% 以下（107、110、111 甚至整卷選擇）。<b>意義</b>：考點變廣、每題變淺變快，吃「秒判性質／複雜度的廣度」，不再是少數大題深推——備考重心放<b>廣度覆蓋與判斷速度</b>。",
+      cards:[
+        {cls:"hot", h:"題型 · 機讀化 ↑↑", b:"續走選擇／複選。練『看到就知道用哪個結構、複雜度多少』；證明/設計大題比重下降但仍偶見。"},
+        {cls:"hot", h:"DP · 樹 長期雙冠", b:"DP（13）、樹 BST/AVL/RB/B+（10）永遠是重點，必須滾瓜爛熟、能秒答性質題。"},
+        {cls:"warm", h:"內容 · ML／生資皮 ↑", b:"114 起題目『包情境』：GNN、分群、序列比對 DP；核心仍是 DP／圖／貪婪，只是換外皮。"},
+        {cls:"warm", h:"近似演算法 · 新熱點", b:"CLRS 35：FPTAS、set-cover greedy、LP rounding、integrality gap 開始入題（114），值得補。"},
+      ],
+      reading:[
+        {h:"演算法", pri:"該補", cls:"p2", items:[
+          "<b>CLRS 第 35 章（近似）</b>讀熟——考古已到此深度；加保險看 <b>Williamson &amp; Shmoys《The Design of Approximation Algorithms》</b>（免費 PDF）前幾章。",
+          "ML／生資：<b>Compeau &amp; Pevzner《Bioinformatics Algorithms》</b>序列比對／分群章；GNN 只需懂<b>訊息傳遞 + Weisfeiler-Lehman</b>概念。",
+          "<b>LeetCode</b> 練 DP 與資料結構手感，正好對應機讀化要的廣度與速度（medium 為主）。",
+        ]},
+        {h:"資料結構", pri:"聖經即可", cls:"p4", items:[
+          "CLRS + Pai 已足夠、無科技缺口；行有餘力寫個平衡樹／雜湊 from-scratch 加深理解，但非必要。",
+        ]},
+      ],
+    },
+    math:{
+      name:"數學（線性代數＋離散數學）", domains:["線性代數","離散數學"], domainNote:"", special:null,
+      typeNarrative:"<b>穩定計算導向。</b>計算題長年約 <b>70%</b> 恆定；<b>證明近年幾乎消失</b>（110 後歸零）；複選（敘述真偽）是次要但常見的題型；111 那年整卷改單選為特例。<b>意義</b>：練<b>計算速度與正確率</b>；證明準備成本低，重點放在「<b>懂定理、能判真偽</b>」而非寫完整證明。",
+      cards:[
+        {cls:"warm", h:"線代 · 內積／特徵值恆主", b:"內積空間（SVD／最小平方／pseudoinverse，8 命中）＋對角化／特徵值（7）為主，偏數值應用面。"},
+        {cls:"warm", h:"離散 · 進階計數＋圖論", b:"進階計數（遞迴式／生成函數，9）＋計數（7）＋圖論（6）為主力，穩定不隨科技波動。"},
+        {cls:"cool", h:"題型 · 計算為王", b:"計算約 70% 恆定，證明比例低且下降；複選考觀念真偽，要懂定理不能死背。"},
+      ],
+      reading:[
+        {h:"線代／離散", pri:"輕補", cls:"p3", items:[
+          "<b>Strang《Introduction to Linear Algebra》</b>——SVD／最小平方／四大基本子空間的直覺，補 Friedberg 太理論的弱點（你已在用）。",
+          "想連到 ML：<b>《Mathematics for Machine Learning》</b>（Deisenroth，免費 PDF）Part I。",
+          "離散練<b>生成函數解遞迴</b>的熟練度即可；Friedberg／Rosen／周志成已覆蓋，<b>無科技牽引缺口</b>。",
+        ]},
+      ],
+    },
+    caos:{
+      name:"計算機結構與作業系統", domains:["計算機結構","作業系統"], domainNote:"",
+      special:{kind:"bars", units:[["ca-dlp","資料平行/GPU","#0072b2"],["ca-dsa","AI 加速器","#d55e00"]], title:"AI 硬體相關題逐年（架構）",
+        note:"GPU／資料平行 ＋ 領域專用加速器（AI）逐年疊高——近 3 年躍上高頻；<b>SSD／Flash／NVMe 考古 0 命中</b>，真正的硬體瓶頸題是「算力與記憶體頻寬」不是儲存。"},
+      typeNarrative:"<b>計算＋設計申論雙主軸。</b>計算題約 <b>65%</b>；且<b>每年幾乎必有一題大『設計申論』</b>（105–109、113、114 都有）——近年這題正是 <b>AI 加速器主題</b>（113#1、114#1 的 LLM／H100／FP8／MLPerf／roofline）。近年複選也增加。<b>意義</b>：計算題要熟，外加一定要準備<b>大設計申論</b>（近年鎖定 AI 硬體）。",
+      cards:[
+        {cls:"hot", h:"AI 硬體 ↑↑（最強且加速）", b:"GPU／資料平行、<b>領域專用加速器（TPU/systolic/NPU）</b>、roofline、<b>量化 FP8/INT8</b>、HBM 頻寬、MLPerf。113/114 連兩年 LLM 加速器申論。"},
+        {cls:"hot", h:"設計申論題 · 每年必備", b:"幾乎每年一大題設計＋分析；近年鎖定 AI 加速器，要能『設計 + 用 roofline／量化分析』申論。"},
+        {cls:"cool", h:"計算本柱 · 必熟", b:"cache／CPI／pipeline／paging／排程 計算約占 65%，是保底分數，務必快而準。"},
+        {cls:"cool", h:"OS · 穩定", b:"排程／同步／記憶體分頁三本柱；偶爾虛擬化、分散式／共識。無明顯科技牽引。"},
+      ],
+      reading:[
+        {h:"計算機結構", pri:"最該補", cls:"p1", items:[
+          "<b>H&amp;P 6e 第 7 章「Domain-Specific Architectures」</b>——聖經本自己就有、含 <b>TPU 案例</b>，113/114 加速器題直接對應，<b>務必精讀</b>。",
+          "<b>Sze et al.《Efficient Processing of Deep Neural Networks》</b>——DNN 加速器權威（dataflow／systolic／量化）。",
+          "<b>Roofline 論文</b>（Williams 2009）＋ <b>TPU 論文</b>（Jouppi, ISCA'17）；懂 FP8/INT8、HBM 頻寬、MLPerf 概念即可。",
+        ]},
+        {h:"作業系統", pri:"聖經即可", cls:"p4", items:[
+          "Silberschatz 已足夠；想動手打底可挑 <b>xv6</b> 幾個 lab（page table／scheduler／locks）。行有餘力補<b>分散式共識（Raft/Paxos 概念）</b>。",
+        ]},
+      ],
+    },
+  };
   // 自製 SVG 折線圖：細線、節點附 <title> tooltip、退讓網格、單一 y 軸
   function svgLine({title, series, yMax, w=480, h=210, directLabel=false}){
     const yrs=TREND_YEARS, mL=28, mR=directLabel?60:16, mT=title?20:8, mB=20;
@@ -530,28 +652,55 @@
     return `<div class="cx-legend">`+series.map(s=>`<span class="cx-leg"><span class="cx-sw" style="background:${s.color}"></span>${s.name}</span>`).join("")+`</div>`;
   }
   function renderTrend(){
-    const {dom, ai}=trendData();
+    const sid=SUBJID, ed=TREND_ED[sid]; if(!ed) return;
+    $("#trendSubjName").textContent=ed.name;
+    const ex=ENGINE.BANK.filter(q=>ENGINE.srcOf(q)==="exam" && q.year>0);
     const V=m=>TREND_YEARS.map(y=>m[y]||0);
-    const aiSeries=[
-      {name:"資料平行/GPU", color:"#0072b2", vals:V(ai["資料平行/GPU"])},
-      {name:"AI 加速器",   color:"#d55e00", vals:V(ai["AI 加速器"])},
-      {name:"ML/生資應用", color:"#009e73", vals:V(ai["ML/生資應用"])},
+    // 領域逐年出題量
+    const domMap={}; ed.domains.forEach(d=>domMap[d]={});
+    ex.forEach(q=> domOf(sid,q.units).forEach(d=>{ if(domMap[d]) domMap[d][q.year]=(domMap[d][q.year]||0)+1; }));
+    const domSeries=ed.domains.map((d,i)=>({name:d, color:i===0?"#0072b2":"#d55e00", vals:V(domMap[d])}));
+    const domMax=Math.max(3, ...domSeries.flatMap(s=>s.vals));
+    // 題型組成（3 桶）
+    const tb={"選填型":{},"計算型":{},"論述型":{}};
+    ex.forEach(q=>{ const b=typeBucket(q.type); tb[b][q.year]=(tb[b][q.year]||0)+1; });
+    const typeSeries=[
+      {name:"選填型（選擇/複選/填空）", color:"#0072b2", vals:V(tb["選填型"])},
+      {name:"計算型", color:"#d55e00", vals:V(tb["計算型"])},
+      {name:"論述型（證明/設計）", color:"#009e73", vals:V(tb["論述型"])},
     ];
-    const aiTot=TREND_YEARS.map((y,i)=>aiSeries.reduce((a,s)=>a+s.vals[i],0));
-    const aiMax=Math.max(3, ...aiTot);
-    $("#trendAI").innerHTML = legendRow(aiSeries) + svgBars({series:aiSeries, yMax:aiMax, w:560, h:240});
-    const order=["線性代數","離散數學","資料結構","演算法","計算機結構","作業系統"];
-    const grid=$("#trendGrid"); grid.innerHTML="";
-    order.forEach(dn=>{
-      const vals=V(dom[dn]||{}), mx=Math.max(3, ...vals);
-      const cell=document.createElement("div"); cell.className="chart-cell";
-      cell.innerHTML=svgLine({title:dn, series:[{name:dn,color:"#0072b2",vals}], yMax:mx, w:360, h:170});
-      grid.appendChild(cell);
-    });
-    let t=`<table class="trend-tbl"><thead><tr><th>領域</th>`+TREND_YEARS.map(y=>`<th>${y}</th>`).join("")+`<th>Σ</th></tr></thead><tbody>`;
-    order.forEach(dn=>{ const vals=V(dom[dn]||{}), tot=vals.reduce((a,b)=>a+b,0);
-      t+=`<tr><td>${dn}</td>`+vals.map(v=>`<td>${v||""}</td>`).join("")+`<td><b>${tot}</b></td></tr>`; });
-    $("#trendTable").innerHTML=t+`</tbody></table>`;
+    const typeMax=Math.max(3, ...TREND_YEARS.map((y,i)=>typeSeries.reduce((a,s)=>a+s.vals[i],0)));
+
+    const CIRC=["①","②","③","④","⑤","⑥"]; let sec=0;
+    const H=t=>`<h3 class="trend-h">${CIRC[sec++]} ${t}</h3>`;
+    const P=t=>t?`<p class="trend-p">${t}</p>`:"";
+    let html="";
+
+    html+=H("逐年出題量（兩領域）")+P(ed.domainNote);
+    html+=`<div class="chart-box">${legendRow(domSeries)}${svgLine({series:domSeries, yMax:domMax, w:560, h:230})}</div>`;
+
+    if(ed.special && ed.special.kind==="line"){
+      const s={name:ed.special.title, color:ed.special.color, vals:V(seriesByUnit(ex, ed.special.unit))};
+      html+=H(ed.special.title)+P(ed.special.note);
+      html+=`<div class="chart-box">${svgLine({series:[s], yMax:Math.max(3,...s.vals), w:560, h:200})}</div>`;
+    } else if(ed.special && ed.special.kind==="bars"){
+      const bs=ed.special.units.map(([u,nm,c])=>({name:nm, color:c, vals:V(seriesByUnit(ex,u))}));
+      const bmax=Math.max(3, ...TREND_YEARS.map((y,i)=>bs.reduce((a,s)=>a+s.vals[i],0)));
+      html+=H(ed.special.title)+P(ed.special.note);
+      html+=`<div class="chart-box">${legendRow(bs)}${svgBars({series:bs, yMax:bmax, w:560, h:220})}</div>`;
+    }
+
+    html+=H("題型組成逐年（機讀 vs 計算 vs 論述）")+P(ed.typeNarrative);
+    html+=`<div class="chart-box">${legendRow(typeSeries)}${svgBars({series:typeSeries, yMax:typeMax, w:560, h:230})}</div>`;
+
+    html+=H("方向預測");
+    html+=`<div class="trend-cards">`+ed.cards.map(c=>`<div class="tcard ${c.cls}"><div class="tc-h">${c.h}</div>${c.b}</div>`).join("")+`</div>`;
+
+    html+=H("聖經之外該補的閱讀");
+    html+=`<div class="read-list">`+ed.reading.map(r=>`<div class="rcard ${r.cls}"><div class="rc-h">${r.h} <span class="pri">${r.pri}</span></div><ul>`+r.items.map(it=>`<li>${it}</li>`).join("")+`</ul></div>`).join("")+`</div>`;
+
+    html+=`<details class="trend-table-wrap"><summary>原始數據表（年 × 領域）</summary>${trendTableHtml(ed.domains, domMap)}</details>`;
+    $("#trendBody").innerHTML=html;
   }
 
   /* ---------- 匯出/匯入進度 ---------- */

@@ -53,6 +53,17 @@ button{font-family:inherit}
 .wslider::-moz-range-track{height:2px;background:var(--line)}
 .wval{font-size:.82rem;color:var(--accent2);font-variant-numeric:tabular-nums;min-width:6.5rem}
 .opt-row input[type=radio]{accent-color:var(--accent);margin-right:.2rem}
+/* 考試模式切換 + 不限時 */
+.mode-switch{display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;background:var(--panel);
+  border:1px solid var(--line);padding:.55rem .9rem;margin:.4rem 0 1rem;font-size:.92rem}
+.mode-switch label{cursor:pointer;display:inline-flex;align-items:center;gap:.32rem;color:var(--txt)}
+.mode-switch input[type=radio],.mode-switch input[type=checkbox]{accent-color:var(--accent)}
+.mode-switch .untimed-lbl{margin-left:auto}
+.past-panel .opt-row{margin-top:0}
+.past-sel{background:var(--bg);color:var(--txt);border:1px solid var(--line);padding:.28rem .55rem;
+  font-family:inherit;font-size:.9rem;cursor:pointer;transition:border-color .2s ease}
+.past-sel:hover{border-color:var(--accent)}
+.timer.up{color:var(--muted)}
 /* 依單元占比：權重輸入面板 */
 .unit-weights{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.4rem;
   margin:.2rem 0 0;background:var(--panel);border:1px solid var(--line);padding:.6rem .8rem}

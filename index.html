@@ -25,38 +25,58 @@
 <main>
   <!-- ============ 出題 / 開始頁 ============ -->
   <section id="screen-start" class="screen active">
-    <h2>① 選擇考試範圍</h2>
-    <p class="hint">勾選要考的單元（對應各科聖經章節）。系統會依「涵蓋所選範圍所有關鍵字、題數與題型分佈比歷屆多約 1/3」的規範隨機選題，並依你的錯題標記調整出現機率。</p>
-    <div class="unit-toolbar">
-      <button id="selAll" class="ghost">全選</button>
-      <button id="selNone" class="ghost">全不選</button>
-      <span id="scopeSummary" class="scope-summary"></span>
+    <h2>① 選擇考試模式與範圍</h2>
+    <div class="mode-switch">
+      <label><input type="radio" name="examMode" value="mock" checked> 模擬出題</label>
+      <label><input type="radio" name="examMode" value="past"> 考古真卷</label>
+      <label class="untimed-lbl" title="關閉倒數與時間到自動交卷，改為正計時（累計已用時間）；適合慢慢刷"><input type="checkbox" id="untimed"> 不限時模式</label>
     </div>
-    <div id="unitList" class="unit-grid"></div>
-    <div class="opt-row">
-      <span class="optlabel">題目來源：</span>
-      <label><input type="checkbox" id="srcExam" checked> <span id="srcExamLabel">考古題</span></label>
-      <label><input type="checkbox" id="srcTb" checked> <span id="srcTbLabel">課本習題</span></label>
-      <label title="只出沒寫過的＋答錯的；仍在錯題復習中的題不受影響"><input type="checkbox" id="excludeCorrect"> 排除已答對的題</label>
-      <span class="optlabel" style="margin-left:1rem">本卷題數：</span>
-      <input type="number" id="countOverride" min="1" max="120" placeholder="依規範">
-      <span class="muted">（留空＝依「涵蓋全部關鍵字／歷屆×1.33」自動決定；想多刷課本可調大）</span>
+
+    <div id="mockPanel">
+      <p class="hint">勾選要考的單元（對應各科聖經章節）。系統會依「涵蓋所選範圍所有關鍵字、題數與題型分佈比歷屆多約 1/3」的規範隨機選題，並依你的錯題標記調整出現機率。</p>
+      <div class="unit-toolbar">
+        <button id="selAll" class="ghost">全選</button>
+        <button id="selNone" class="ghost">全不選</button>
+        <span id="scopeSummary" class="scope-summary"></span>
+      </div>
+      <div id="unitList" class="unit-grid"></div>
+      <div class="opt-row">
+        <span class="optlabel">題目來源：</span>
+        <label><input type="checkbox" id="srcExam" checked> <span id="srcExamLabel">考古題</span></label>
+        <label><input type="checkbox" id="srcTb" checked> <span id="srcTbLabel">課本習題</span></label>
+        <label title="只出沒寫過的＋答錯的；仍在錯題復習中的題不受影響"><input type="checkbox" id="excludeCorrect"> 排除已答對的題</label>
+        <span class="optlabel" style="margin-left:1rem">本卷題數：</span>
+        <input type="number" id="countOverride" min="1" max="120" placeholder="依規範">
+        <span class="muted">（留空＝依「涵蓋全部關鍵字／歷屆×1.33」自動決定；想多刷課本可調大）</span>
+      </div>
+      <div class="opt-row">
+        <span class="optlabel">考古題比重：</span>
+        <span class="muted" style="margin:0">課本類似題</span>
+        <input type="range" id="examWeight" class="wslider" min="0" max="100" value="37">
+        <span class="muted" style="margin:0">考古題</span>
+        <span id="examWeightVal" class="wval"></span>
+        <span class="muted">（滑桿控制考古題相對課本題的出現權重；不影響「涵蓋全部關鍵字」的保證）</span>
+      </div>
+      <div class="opt-row">
+        <span class="optlabel">出題分佈：</span>
+        <label><input type="radio" name="genMode" value="random" checked> 機率隨機（依錯題題海涵蓋全關鍵字）</label>
+        <label><input type="radio" name="genMode" value="ratio"> 依單元占比</label>
+        <span class="muted" id="ratioHint" hidden>為每個已選單元填權重（留空＝1），題數按比例分配；此模式不強制涵蓋全部關鍵字。</span>
+      </div>
+      <div id="unitWeights" class="unit-weights" hidden></div>
     </div>
-    <div class="opt-row">
-      <span class="optlabel">考古題比重：</span>
-      <span class="muted" style="margin:0">課本類似題</span>
-      <input type="range" id="examWeight" class="wslider" min="0" max="100" value="37">
-      <span class="muted" style="margin:0">考古題</span>
-      <span id="examWeightVal" class="wval"></span>
-      <span class="muted">（滑桿控制考古題相對課本題的出現權重；不影響「涵蓋全部關鍵字」的保證）</span>
+
+    <div id="pastPanel" hidden>
+      <p class="hint">直接考某校某年的<b>完整真卷</b>：題目照原卷題號順序呈現，不重新出題、不加入課本題。作答與批改流程相同，一樣會更新錯題題海。</p>
+      <div class="opt-row">
+        <span class="optlabel">學校：</span>
+        <select id="pastSchool" class="past-sel"></select>
+        <span class="optlabel" style="margin-left:1rem">年份：</span>
+        <select id="pastYear" class="past-sel"></select>
+        <span id="pastPreview" class="muted"></span>
+      </div>
     </div>
-    <div class="opt-row">
-      <span class="optlabel">出題分佈：</span>
-      <label><input type="radio" name="genMode" value="random" checked> 機率隨機（依錯題題海涵蓋全關鍵字）</label>
-      <label><input type="radio" name="genMode" value="ratio"> 依單元占比</label>
-      <span class="muted" id="ratioHint" hidden>為每個已選單元填權重（留空＝1），題數按比例分配；此模式不強制涵蓋全部關鍵字。</span>
-    </div>
-    <div id="unitWeights" class="unit-weights" hidden></div>
+
     <div class="start-bar">
       <div id="genPreview" class="gen-preview"></div>
       <button id="startBtn" class="primary big">開始考試 ▶</button>
@@ -125,64 +145,11 @@
     <div id="heatList" class="heat-list"></div>
   </section>
 
-  <!-- ============ 趨勢預測 ============ -->
+  <!-- ============ 趨勢預測（依目前科目） ============ -->
   <section id="screen-trend" class="screen">
-    <h2>出題趨勢與方向預測</h2>
-    <p class="hint">用 102–114 全部考古題(三卷六領域)的逐年命中,看哪些範圍在升溫、近年是否被 AI 等科技趨勢牽動,協助預測方向。圖表為互動:游標移到節點/長條看該年題數。</p>
-
-    <h3 class="trend-h">① AI 驅動訊號(最關鍵)</h3>
-    <p class="trend-p">近年最明確的科技牽引來自<strong>「AI 算力」</strong>——不是儲存/SSD(考古 0 命中)。下圖(堆疊長條)是每年「AI 相關題數」,分成最能反映 AI 的三個範圍;可見近年往上疊高,114 年達 5 題。</p>
-    <div id="trendAI" class="chart-box"></div>
-    <div class="trend-note">
-      <b>證據</b>:計組 <b>113#1、114#1 連兩年</b>都出「LLM 加速器」<b>申論設計題</b>(GPT-3／H100／FP8／MLPerf／TinyChat／roofline);112 出 roofline 計算。演算法卷 <b>114</b> 冒出一整組 ML 味應用:GNN/WL 頂點排序、c-means 分群、蛋白質序列比對 DP。<b>SSD／Flash／NVMe：考古 0 題</b>——真正的硬體瓶頸題是「算力與記憶體頻寬」,不是儲存短缺。
-    </div>
-
-    <h3 class="trend-h">② 六領域逐年出題量</h3>
-    <p class="trend-p">各領域自有 y 軸刻度(看自身趨勢,非跨領域比大小)。⚠ 演算法 114 年為 18 題,是<strong>該年改制成「多小題」</strong>所致(題量暴增≠難度暴增),非趨勢訊號。</p>
-    <div id="trendGrid" class="chart-grid"></div>
-    <details class="trend-table-wrap"><summary>看原始數據表(年 × 領域)</summary><div id="trendTable"></div></details>
-
-    <h3 class="trend-h">③ 方向預測</h3>
-    <div class="trend-cards">
-      <div class="tcard hot"><div class="tc-h">計算機結構 · AI 硬體 ↑↑</div>
-        最強且加速中。預期續考:GPU／資料平行、<b>領域專用加速器(TPU/systolic/NPU)</b>、roofline(算力 vs 記憶體頻寬)、<b>量化(FP8/INT8)</b>、HBM 頻寬瓶頸、MLPerf。這對應台大架構實驗室方向,出題老師會延伸。</div>
-      <div class="tcard hot"><div class="tc-h">演算法 · ML/生資應用化 ↑</div>
-        題目開始「包情境」:GNN/訊息傳遞、分群、序列比對 DP;<b>近似演算法(CLRS 35)</b>成新熱點(FPTAS、LP rounding、integrality gap、set-cover greedy)。核心工具不變,但外皮換成 ML/生資。</div>
-      <div class="tcard warm"><div class="tc-h">線代 · 穩定偏應用</div>
-        永遠是內積空間(SVD/最小平方/pseudoinverse)＋對角化/特徵值。近年偏「數值/應用」面,純理論證明比例略降。</div>
-      <div class="tcard warm"><div class="tc-h">離散 · 穩定</div>
-        進階計數(遞迴式/生成函數)＋計數＋圖論恆為主力,不隨科技波動。</div>
-      <div class="tcard cool"><div class="tc-h">作業系統 · 穩定</div>
-        CPU 排程／同步／記憶體分頁三本柱;偶爾點到虛擬化、分散式/共識。無明顯科技牽引。</div>
-      <div class="tcard cool"><div class="tc-h">資料結構 · 穩定</div>
-        樹(BST/AVL/RB/B+)＋堆積為主,題型穩定。</div>
-    </div>
-
-    <h3 class="trend-h">④ 各領域「聖經之外」該補的閱讀</h3>
-    <p class="trend-p">聖經本(CLRS／H&amp;P／COD／Silberschatz／Friedberg／Rosen)涵蓋 9 成,但近年 AI 題超出它們的守備範圍。以下依趨勢排「補讀優先序」。</p>
-    <div class="read-list">
-      <div class="rcard p1"><div class="rc-h">計算機結構 <span class="pri">最該補</span></div>
-        <ul>
-          <li><b>H&amp;P 6e 第 7 章「Domain-Specific Architectures」</b>——聖經本自己就有,含 <b>TPU 案例</b>,113/114 的加速器題直接對應,務必精讀。</li>
-          <li><b>Sze et al.《Efficient Processing of Deep Neural Networks》</b>——DNN 加速器的權威(dataflow、systolic、量化),補 H&amp;P 的深度。</li>
-          <li><b>Roofline 原始論文</b>(Williams 2009)＋<b>TPU 論文</b>(Jouppi, ISCA'17);了解 FP8/INT8 量化、HBM 頻寬、MLPerf 基準概念即可。</li>
-        </ul></div>
-      <div class="rcard p2"><div class="rc-h">演算法 <span class="pri">次要</span></div>
-        <ul>
-          <li><b>CLRS 第 35 章(近似)</b>務必讀熟(考古已到此深度);想加保險再看 <b>Williamson &amp; Shmoys《The Design of Approximation Algorithms》</b>(免費 PDF)前幾章。</li>
-          <li>ML/生資應用:<b>Compeau &amp; Pevzner《Bioinformatics Algorithms》</b>看序列比對/分群章;GNN 只需懂<b>訊息傳遞 + Weisfeiler-Lehman</b>概念,不必啃論文。</li>
-          <li>隨機演算法想補:Mitzenmacher &amp; Upfal《Probability and Computing》。</li>
-        </ul></div>
-      <div class="rcard p3"><div class="rc-h">線性代數 <span class="pri">輕補</span></div>
-        <ul>
-          <li><b>Strang《Introduction to Linear Algebra》</b>——SVD／最小平方／四大基本子空間的直覺,補 Friedberg 太理論的弱點(你已在用)。</li>
-          <li>想連到 ML:<b>《Mathematics for Machine Learning》</b>(Deisenroth,免費 PDF)Part I。</li>
-        </ul></div>
-      <div class="rcard p4"><div class="rc-h">離散 / 作業系統 / 資料結構 <span class="pri">聖經即可</span></div>
-        <ul>
-          <li>Rosen／Silberschatz／CLRS 已足夠,考古無科技牽引缺口。行有餘力:OS 補<b>虛擬化與分散式共識</b>(Raft/Paxos 概念)、離散補<b>生成函數</b>解遞迴的熟練度。</li>
-        </ul></div>
-    </div>
+    <h2>出題趨勢與方向預測 — <span id="trendSubjName"></span></h2>
+    <p class="hint">依<b>目前科目</b>（右上可切換）的 102–114 考古逐年命中，分析各領域升溫、近年<b>題型／內容</b>轉向、以及聖經之外該補的閱讀。圖表互動：游標移到節點／長條看該年題數。</p>
+    <div id="trendBody"></div>
   </section>
 
   <!-- ============ 歷次成績 ============ -->
